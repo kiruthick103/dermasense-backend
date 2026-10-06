@@ -1,0 +1,137 @@
+{
+  "quality": {
+    "max_dimension": 768,
+    "laplacian_blur_threshold": 80.0,
+    "crop_fraction": 0.6,
+    "brightness_mean_min": 40.0,
+    "brightness_mean_max": 220.0,
+    "brightness_p05_min": 15.0,
+    "brightness_p95_max": 250.0,
+    "glare_fraction_max": 0.08,
+    "glare_v_min": 245,
+    "glare_s_max": 40,
+    "skin_fraction_min": 0.15,
+    "largest_skin_region_fraction_min": 0.08,
+    "upload_min_width": 320,
+    "upload_min_height": 320,
+    "upload_jpeg_quality_min": 40,
+    "upload_fft_moire_threshold": 0.45,
+    "upload_cartoon_edge_ratio_max": 0.7
+  },
+  "pattern_model": {
+    "classes": [
+      {
+        "id": "fungal_ring_pattern",
+        "display_name": "Fungal-type ring pattern",
+        "description": "Annular erythematous plaque with raised active scaling border and clearer centre."
+      },
+      {
+        "id": "eczema_dermatitis_pattern",
+        "display_name": "Eczema or dermatitis-like",
+        "description": "Ill-defined erythematous patches with excoriation, lichenification, or microvesiculation."
+      },
+      {
+        "id": "psoriasis_pattern",
+        "display_name": "Psoriasis-like",
+        "description": "Well-demarcated salmon-pink plaques with thick micaceous silvery scales."
+      },
+      {
+        "id": "bacterial_infection_pattern",
+        "display_name": "Bacterial-infection-like",
+        "description": "Pustular, honey-colored crusting (impetigo-like) or tender expanding erythema."
+      },
+      {
+        "id": "other_unclear_pattern",
+        "display_name": "Other / unclear",
+        "description": "Atypical, polymorphic, or unclassified dermatological presentation."
+      }
+    ],
+    "strength_bands": {
+      "t_strong": 0.75,
+      "t_moderate": 0.5,
+      "conformal_alpha": 0.1,
+      "conformal_max_set_size_strong": 1,
+      "conformal_max_set_size_moderate": 2,
+      "ood_energy_threshold": -4.0,
+      "upload_flag_strength_cap": "Moderate"
+    }
+  },
+  "risk_scoring": {
+    "steroid_risk": {
+      "unknown_or_unprescribed_cream": 2,
+      "steroid_name_seen_or_label_match": 3,
+      "spread_despite_treatment": 2,
+      "returned_after_stopping": 1,
+      "combination_wording": 1
+    },
+    "fungal_pattern": {
+      "pattern_model_fungal_hit": 2,
+      "itchy_ring_or_scaly": 1,
+      "duration_gt_1_week": 1
+    }
+  },
+  "decision": {
+    "steroid_risk_threshold": 3,
+    "fungal_pattern_threshold": 2,
+    "model_abstain_low": 0.4,
+    "model_abstain_high": 0.65
+  },
+  "danger_signs": [
+    "trouble_breathing_throat_swelling",
+    "skin_peeling_large_blisters",
+    "eye_involvement_vision_change",
+    "severe_rapidly_worsening_pain",
+    "fever_feeling_very_unwell",
+    "spreading_fast_over_hours",
+    "pus_foul_fluid",
+    "black_purple_skin",
+    "genital_severe_pain_swelling",
+    "infant_widespread_rash"
+  ],
+  "vulnerable_groups": [
+    "infant",
+    "pregnancy",
+    "immunocompromised"
+  ],
+  "banned_words": {
+    "en": [
+      "you are fine",
+      "nothing to worry about",
+      "looks normal",
+      "healthy skin",
+      "cured",
+      "diagnosed",
+      "diagnosis",
+      "confirmed",
+      "you have",
+      "suffering from",
+      "tinea",
+      "ringworm"
+    ],
+    "hi": [
+      "आप ठीक हैं",
+      "चिंता की कोई बात नहीं",
+      "निदान किया गया",
+      "पुष्टि की गई",
+      "आपको बीमारी है"
+    ],
+    "kn": [
+      "ನೀವು ಚೆನ್ನಾಗಿದ್ದೀರಿ",
+      "ಚಿಂತಿಸಬೇಕಾಗಿಲ್ಲ",
+      "ದೃಢಪಡಿಸಲಾಗಿದೆ",
+      "ರೋಗನಿರ್ಣಯ ಮಾಡಲಾಗಿದೆ"
+    ]
+  },
+  "categories": {
+    "A": "Possible fungal pattern, clinical review recommended.",
+    "B": "Possible steroid-modified or treatment-resistant rash.",
+    "C": "Image or answers uncertain, clinical assessment recommended.",
+    "D": "Seek urgent in-person care now."
+  },
+  "safety": {
+    "header_ribbon": "Prototype screening aid. Not an official government or hospital service.",
+    "footer_ribbon": "Prototype screening aid. Not an official government or hospital service.",
+    "disclaimer": "DermaSense is an investigational screening prototype. It does not provide medical diagnoses, clinical determinations, or treatment prescriptions. All observations require verification by a qualified healthcare professional.",
+    "prototype_status": "prototype_not_clinically_validated"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "fp32_size_mb": 4.09,
+  "int8_size_mb": 1.16,
+  "target_size_met": true,
+  "max_diff_fp32": 3.725290298461914e-09,
+  "tolerance_fp32": 0.0001,
+  "parity_fp32_passed": true,
+  "max_diff_int8_vs_pytorch": 5.093775689601898e-05,
+  "quantization_type": "INT8 dynamic"
+}

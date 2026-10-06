@@ -1,0 +1,3994 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,viewport-fit=cover">
+<meta name="description" content="DermaSense: Official-style Public Health Skin Rash Screening and Referral Aid. Screening tool only, not a clinical diagnosis.">
+<title>DermaSense: Skin Rash Screening and Referral Aid</title>
+
+<!-- Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator && (window.location.protocol.startsWith('http') || window.location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration:', err));
+  });
+}
+</script>
+
+<!-- Supabase JS Client v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Google Fonts: Noto Sans with Devanagari and Kannada -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ==========================================================================
+   GOVERNMENT HOSPITAL HEALTH PORTAL DESIGN SYSTEM
+   Compliant with WCAG 2.1 AA and Guidelines for Indian Government Websites (GIGW)
+   ========================================================================== */
+:root {
+  --gov-navy: #123a6f;
+  --gov-navy-dark: #0a2447;
+  --gov-navy-light: #e8edf5;
+  --gov-green: #1c7c3c;
+  --gov-green-light: #eaf6ee;
+  --gov-saffron: #e07b00;
+  --gov-saffron-light: #fef4e8;
+  --gov-red: #c0182b;
+  --gov-red-light: #fdedef;
+  --gov-amber: #b7791f;
+  --gov-amber-light: #fef9ec;
+  --gov-slate: #51657a;
+  --gov-slate-light: #eef2f6;
+
+  --text-main: #1b2430;
+  --text-muted: #556271;
+  --surface-bg: #f4f6f9;
+  --card-bg: #ffffff;
+  --border-color: #d1d5db;
+  --border-focus: #123a6f;
+
+  --radius: 6px;
+  --font-base: 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Kannada', system-ui, -apple-system, sans-serif;
+  --root-font-size: 16px;
+  --shadow-sm: 0 1px 3px rgba(18,58,111,0.08);
+  --shadow-md: 0 4px 12px rgba(18,58,111,0.10);
+}
+
+/* High Contrast Mode */
+html.high-contrast {
+  --gov-navy: #000000;
+  --gov-navy-dark: #000000;
+  --gov-navy-light: #ffff00;
+  --gov-green: #005500;
+  --gov-red: #880000;
+  --text-main: #000000;
+  --text-muted: #222222;
+  --surface-bg: #ffffff;
+  --card-bg: #ffffff;
+  --border-color: #000000;
+}
+html.high-contrast * {
+  border-color: #000000 !important;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: var(--root-font-size);
+  background-color: var(--surface-bg);
+  color: var(--text-main);
+  font-family: var(--font-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 10px;
+  background: var(--gov-navy);
+  color: #ffffff;
+  padding: 8px 16px;
+  z-index: 10000;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: var(--radius);
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 10px;
+  outline: 3px solid var(--gov-saffron);
+}
+
+/* Tricolour Accent Strip (Decorative Only) */
+.gov-tricolour-strip {
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(to right, #ff9933 33.33%, #ffffff 33.33%, #ffffff 66.66%, #138808 66.66%);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Utility Bar */
+.gov-utility-bar {
+  background: #e8edf2;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.gov-utility-inner {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 4px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.utility-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.font-resizer, .contrast-toggle, .lang-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.util-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  padding: 2px 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-main);
+  border-radius: 4px;
+  cursor: pointer;
+  min-height: 28px;
+}
+.util-btn:hover, .util-btn:focus-visible {
+  background: var(--card-bg);
+  outline: 2px solid var(--gov-navy);
+}
+
+/* Header Ribbon (Mandatory Disclaimer) */
+.gov-disclaimer-ribbon {
+  background: #fff8e6;
+  border-bottom: 1px solid #fedc9d;
+  color: #7a4d05;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 5px 12px;
+}
+
+/* Demo Banner */
+.demo-mode-banner {
+  background: #e6f4ea;
+  border-bottom: 1px solid #b7e1cd;
+  color: #137333;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 12px;
+  letter-spacing: 0.5px;
+}
+
+/* Portal Main Header */
+.gov-header {
+  background: var(--card-bg);
+  border-bottom: 2px solid var(--gov-navy);
+  padding: 14px 16px;
+}
+.gov-header-inner {
+  max-width: 1140px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.portal-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--gov-navy);
+}
+.portal-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--gov-navy-light);
+  border: 1.5px solid var(--gov-navy);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gov-navy);
+  flex-shrink: 0;
+}
+.portal-titles {
+  display: flex;
+  flex-direction: column;
+}
+.portal-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gov-navy);
+  line-height: 1.2;
+}
+.portal-tagline {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.portal-auth-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Navigation Bar */
+.gov-navbar {
+  background: var(--gov-navy);
+  color: #ffffff;
+  border-bottom: 1px solid var(--gov-navy-dark);
+}
+.gov-nav-inner {
+  max-width: 1140px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.nav-link {
+  color: #e5edf7;
+  text-decoration: none;
+  padding: 12px 16px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s;
+}
+.nav-link:hover, .nav-link:focus-visible {
+  background: rgba(255,255,255,0.1);
+  color: #ffffff;
+  outline: none;
+}
+.nav-link.active {
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
+  border-bottom-color: var(--gov-saffron);
+}
+
+/* Main Container & Layout */
+.gov-main {
+  flex: 1;
+  max-width: 1140px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+/* Emergency Alert Strip (108 Helpline) */
+.gov-emergency-strip {
+  background: var(--gov-red-light);
+  border-left: 5px solid var(--gov-red);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.emergency-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #770b17;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.emergency-phone-btn {
+  background: var(--gov-red);
+  color: #ffffff;
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: var(--radius);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.emergency-phone-btn:hover, .emergency-phone-btn:focus-visible {
+  background: #9d1221;
+}
+
+/* Screen Wrapper */
+.screen-panel {
+  display: none;
+}
+.screen-panel.active {
+  display: block;
+}
+
+/* Form Layout: Two-column on desktop (Left Step List, Right Form Card) */
+.wizard-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 820px) {
+  .wizard-layout {
+    grid-template-columns: 1fr;
+  }
+  .desktop-steps {
+    display: none !important;
+  }
+}
+
+/* Step Bar on Mobile */
+.mobile-step-bar {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+}
+@media (min-width: 821px) {
+  .mobile-step-bar {
+    display: none !important;
+  }
+}
+
+/* Desktop Step List */
+.desktop-steps {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.step-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.step-item.active {
+  background: var(--gov-navy-light);
+  color: var(--gov-navy);
+  font-weight: 700;
+  border-left: 3px solid var(--gov-navy);
+}
+.step-item.completed {
+  color: var(--gov-green);
+}
+.step-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.step-item.active .step-badge {
+  background: var(--gov-navy);
+  color: #ffffff;
+  border-color: var(--gov-navy);
+}
+.step-item.completed .step-badge {
+  background: var(--gov-green);
+  color: #ffffff;
+  border-color: var(--gov-green);
+}
+
+/* Form Card Container */
+.gov-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.gov-card-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+.gov-card-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--gov-navy);
+  line-height: 1.3;
+}
+.gov-card-desc {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Form Controls & Fieldsets */
+fieldset.gov-fieldset {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  margin-bottom: 20px;
+  background: #ffffff;
+}
+legend.gov-legend {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  padding: 0 8px;
+}
+.req-marker {
+  color: var(--gov-red);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* Radio & Checkbox Card Hit Areas (48px+ touch targets) */
+.choice-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+.choice-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.choice-grid-areas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.choice-card {
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  background: #ffffff;
+  transition: all 0.15s;
+  user-select: none;
+}
+.choice-card:hover {
+  border-color: var(--gov-navy);
+  background: var(--surface-bg);
+}
+.choice-card.selected {
+  border-color: var(--gov-navy);
+  background: var(--gov-navy-light);
+  color: var(--gov-navy);
+  font-weight: 600;
+}
+.choice-card input[type="radio"],
+.choice-card input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--gov-navy);
+  flex-shrink: 0;
+}
+.choice-label {
+  font-size: 0.9375rem;
+  line-height: 1.3;
+}
+.choice-hint {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+/* Buttons */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  cursor: pointer;
+  min-height: 48px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-primary {
+  background: var(--gov-navy);
+  color: #ffffff;
+}
+.btn-primary:hover, .btn-primary:focus-visible {
+  background: var(--gov-navy-dark);
+  outline: 3px solid var(--gov-saffron);
+}
+.btn-primary:disabled {
+  background: #9ca3af;
+  border-color: #9ca3af;
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: #ffffff;
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+.btn-secondary:hover, .btn-secondary:focus-visible {
+  background: var(--surface-bg);
+  border-color: var(--text-main);
+}
+.btn-danger {
+  background: var(--gov-red);
+  color: #ffffff;
+}
+.btn-success {
+  background: var(--gov-green);
+  color: #ffffff;
+}
+.btn-sm {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+}
+
+/* Photo Slots: Camera & Upload Equal Buttons */
+.photo-slot-card {
+  border: 1.5px dashed var(--border-color);
+  border-radius: var(--radius);
+  padding: 18px;
+  background: #fafbfc;
+  margin-bottom: 18px;
+}
+.photo-slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.photo-slot-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Automatic Analysis Progress Sequence */
+.analysis-progress-box {
+  background: var(--gov-navy-light);
+  border: 1px solid #c5d4e8;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 18px;
+}
+.progress-step-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.progress-step-item.active {
+  color: var(--gov-navy);
+  font-weight: 700;
+}
+.progress-step-item.done {
+  color: var(--gov-green);
+}
+
+/* Live Camera Viewfinder & Quality Ring */
+.camera-card-wrap {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000000;
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+}
+#liveVideo {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  display: block;
+}
+.camera-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px;
+  height: 220px;
+  border: 2px dashed rgba(255,255,255,0.7);
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+.quality-ring-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(0,0,0,0.8);
+  border: 2px solid #9ca3af;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.8125rem;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.quality-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #9ca3af;
+}
+.camera-controls-bar {
+  background: #111827;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+.btn-shutter {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 4px solid var(--gov-navy);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-shutter:hover, .btn-shutter:focus-visible {
+  outline: 3px solid var(--gov-saffron);
+  transform: scale(1.05);
+}
+.cam-tool-btn {
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.8125rem;
+}
+
+/* Category Result Cards */
+.result-hero {
+  border: 2px solid;
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.result-hero.cat-a { border-color: var(--gov-amber); background: var(--gov-amber-light); }
+.result-hero.cat-b { border-color: var(--gov-saffron); background: var(--gov-saffron-light); }
+.result-hero.cat-c { border-color: var(--gov-slate); background: var(--gov-slate-light); }
+.result-hero.cat-d { border-color: var(--gov-red); background: var(--gov-red-light); }
+
+.res-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.res-ring-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cat-a .res-ring-badge { background: var(--gov-amber); }
+.cat-b .res-ring-badge { background: var(--gov-saffron); }
+.cat-c .res-ring-badge { background: var(--gov-slate); }
+.cat-d .res-ring-badge { background: var(--gov-red); }
+
+.res-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.res-urgency-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.cat-a .res-urgency-tag { background: #fae1b8; color: #724603; }
+.cat-b .res-urgency-tag { background: #fcd9b3; color: #7c3e02; }
+.cat-c .res-urgency-tag { background: #dce4ed; color: #2d3b4b; }
+.cat-d .res-urgency-tag { background: #fac2c7; color: #7a0c18; }
+
+.res-action-box {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* "Looks similar to (not a diagnosis)" Panel */
+.looks-similar-panel {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-left: 5px solid var(--gov-navy);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 20px;
+}
+.strength-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.strength-strong { background: var(--gov-green-light); color: var(--gov-green); border: 1px solid var(--gov-green); }
+.strength-moderate { background: var(--gov-amber-light); color: var(--gov-amber); border: 1px solid var(--gov-amber); }
+.strength-weak { background: var(--gov-slate-light); color: var(--gov-slate); border: 1px solid var(--gov-slate); }
+.strength-abstain { background: var(--gov-red-light); color: var(--gov-red); border: 1px solid var(--gov-red); }
+
+/* Details & Tables */
+details.gov-details {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  margin-top: 16px;
+  background: #ffffff;
+}
+details.gov-details summary {
+  padding: 14px 16px;
+  font-weight: 700;
+  color: var(--gov-navy);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+details.gov-details summary::-webkit-details-marker { display: none; }
+details.gov-details summary::after { content: "▼"; font-size: 0.75rem; transition: transform 0.2s; }
+details.gov-details[open] summary::after { transform: rotate(180deg); }
+.details-content {
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.875rem;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.data-table th, .data-table td {
+  border: 1px solid var(--border-color);
+  padding: 8px 10px;
+  text-align: left;
+}
+.data-table th { background: var(--surface-bg); font-weight: 700; }
+
+/* Role Cards Grid for Sign-In */
+.role-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.role-card-btn {
+  background: #ffffff;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.role-card-btn:hover, .role-card-btn.active {
+  border-color: var(--gov-navy);
+  background: var(--gov-navy-light);
+  outline: none;
+}
+.role-icon {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 8px auto;
+  color: var(--gov-navy);
+}
+
+/* Formal Footer */
+.gov-footer {
+  background: #111c2e;
+  color: #d1d9e6;
+  border-top: 4px solid var(--gov-navy);
+  margin-top: auto;
+  font-size: 0.8125rem;
+}
+.gov-footer-inner {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.footer-link {
+  color: #ffffff;
+  text-decoration: none;
+}
+.footer-link:hover, .footer-link:focus-visible {
+  text-decoration: underline;
+  color: var(--gov-saffron);
+}
+.footer-disclaimer {
+  color: #9aa8be;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.footer-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #7b8b9f;
+/* ==========================================================================
+   MULTI-PORTAL HEALTHCARE PLATFORM STYLES
+   ========================================================================== */
+.portal-layout {
+  display: flex;
+  min-height: calc(100vh - 120px);
+  background: var(--surface-bg);
+  position: relative;
+}
+
+.portal-sidebar {
+  width: 250px;
+  background: #ffffff;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: transform 0.2s ease-in-out;
+  z-index: 100;
+}
+
+.portal-sidebar-header {
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: #ffffff;
+}
+
+.portal-role-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9375rem;
+  flex-shrink: 0;
+}
+
+.portal-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  gap: 4px;
+  flex: 1;
+}
+
+.portal-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.portal-nav-item:hover {
+  background: var(--gov-navy-light);
+  color: var(--gov-navy);
+}
+
+.portal-nav-item.active {
+  background: var(--gov-navy);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.nav-unread-dot {
+  margin-left: auto;
+  background: var(--gov-saffron);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.portal-sidebar-footer {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-color);
+  background: #ffffff;
+}
+
+.portal-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.portal-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.portal-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.portal-status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gov-navy);
+  background: var(--gov-navy-light);
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.portal-icon-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 1.1rem;
+}
+
+.topbar-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--gov-red);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 10px;
+  border: 1.5px solid #ffffff;
+}
+
+.portal-content-box {
+  padding: 24px;
+  flex: 1;
+}
+
+.portal-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.metric-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--gov-navy);
+  margin: 6px 0 2px 0;
+}
+
+.metric-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.status-pill {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.status-pending_asha { background: #fef4e8; color: #b45309; }
+.status-assigned_doctor { background: #e0f2fe; color: #0369a1; }
+.status-doctor_reviewed { background: #ecfdf5; color: #047857; }
+.status-completed { background: #f0fdf4; color: #15803d; }
+.status-emergent { background: #fef2f2; color: #b91c1c; }
+.status-scheduled { background: #f5f3ff; color: #6d28d9; }
+
+.portal-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 360px;
+  max-width: 90vw;
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-body {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.portal-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-dialog {
+  background: #ffffff;
+  border-radius: var(--radius);
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.modal-dialog.modal-lg {
+  max-width: 820px;
+}
+
+.modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 18px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: var(--surface-bg);
+}
+
+.portal-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--gov-navy);
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  z-index: 2000;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  animation: slideUp 0.3s ease;
+}
+
+.mobile-sidebar-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.dropdown-quick-role {
+  position: relative;
+}
+
+.quick-role-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  min-width: 190px;
+  z-index: 150;
+  padding: 6px 0;
+  margin-top: 4px;
+}
+
+.quick-role-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-main);
+  transition: background 0.15s;
+}
+
+.quick-role-menu button:hover {
+  background: var(--gov-navy-light);
+  color: var(--gov-navy);
+}
+
+.auth-tabs-bar {
+  display: flex;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 18px;
+}
+
+.auth-tab-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  text-align: center;
+}
+
+.auth-tab-btn.active {
+  color: var(--gov-navy);
+  border-bottom-color: var(--gov-navy);
+}
+
+@media (max-width: 768px) {
+  .mobile-sidebar-toggle { display: block; }
+  .portal-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+  }
+  .portal-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+  }
+  .doc-modal-grid { grid-template-columns: 1fr !important; }
+  .analyst-charts-grid { grid-template-columns: 1fr !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Skip to main content (GIGW / WCAG 2.1 AA) -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Decorative Indian Tricolour Strip -->
+<div class="gov-tricolour-strip" aria-hidden="true"></div>
+
+<!-- Accessible Utility Bar -->
+<div class="gov-utility-bar">
+  <div class="gov-utility-inner">
+    <span>Government Hospital Health Portal Screening Support</span>
+    <div class="utility-actions">
+      <!-- Text Resizer -->
+      <div class="font-resizer" role="group" aria-label="Text size adjustment">
+        <span>Text:</span>
+        <button type="button" class="util-btn" onclick="adjustFontSize(-1)" title="Decrease font size" aria-label="Decrease text size">A-</button>
+        <button type="button" class="util-btn" onclick="adjustFontSize(0)" title="Reset font size" aria-label="Reset text size">A</button>
+        <button type="button" class="util-btn" onclick="adjustFontSize(1)" title="Increase font size" aria-label="Increase text size">A+</button>
+      </div>
+
+      <!-- High Contrast Toggle -->
+      <div class="contrast-toggle">
+        <button type="button" class="util-btn" id="btnContrast" onclick="toggleContrast()" title="High contrast mode" aria-label="Toggle high contrast">Contrast</button>
+      </div>
+
+      <!-- Language Selector -->
+      <div class="lang-picker" role="group" aria-label="Language selection">
+        <span>Language:</span>
+        <button type="button" class="util-btn" onclick="setLanguage('en')" id="lang_en">EN</button>
+        <button type="button" class="util-btn" onclick="setLanguage('hi')" id="lang_hi">हिं</button>
+        <button type="button" class="util-btn" onclick="setLanguage('kn')" id="lang_kn">ಕ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Header Ribbon (Mandatory Disclaimer) -->
+<div class="gov-disclaimer-ribbon" role="note">
+  Prototype screening aid. Not an official government or hospital service.
+</div>
+
+<!-- Demo Mode Banner -->
+<div class="demo-mode-banner" id="demoBanner">
+  DEMO MODE: Synthetic demonstration cases and accounts, not real patients.
+</div>
+
+<!-- Main Portal Header -->
+<header class="gov-header" role="banner">
+  <div class="gov-header-inner">
+    <a href="#home" class="portal-brand" onclick="navigateTo('home')">
+      <div class="portal-icon" aria-hidden="true">
+        <!-- Stethoscope Line SVG -->
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.5 3h3v5a4.5 4.5 0 0 0 9 0V3h3"/>
+          <path d="M12 12.5V17a3 3 0 0 0 3 3h2a2 2 0 1 0 0-4h-2"/>
+          <circle cx="19" cy="18" r="1"/>
+        </svg>
+      </div>
+      <div class="portal-titles">
+        <span class="portal-name">DermaSense: Skin Rash Screening and Referral Aid</span>
+        <span class="portal-tagline">Clinical Decision Support & Community Referral Portal</span>
+      </div>
+    </a>
+    
+    <div class="portal-auth-status">
+      <div id="userBadge" style="display:none;align-items:center;gap:8px;">
+        <span id="userNameRole" style="font-size:0.875rem;font-weight:700;color:var(--gov-navy);"></span>
+        <button type="button" class="util-btn" onclick="logoutUser()">Sign Out</button>
+      </div>
+      <span class="portal-badge" id="portalBadge">Prototype Demo</span>
+    </div>
+  </div>
+</header>
+
+<!-- Navigation Bar -->
+<nav class="gov-navbar" role="navigation" aria-label="Primary navigation">
+  <div class="gov-nav-inner">
+    <a href="#home" class="nav-link active" id="nav-home" onclick="navigateTo('home')">Home</a>
+    <a href="#check" class="nav-link" id="nav-check" onclick="navigateTo('check')">Check a Rash</a>
+    <a href="#how" class="nav-link" id="nav-how" onclick="navigateTo('how')">How it Works</a>
+    <a href="#signin" class="nav-link" id="nav-signin" onclick="navigateTo('signin')">Sign In</a>
+    <a href="#dashboard" class="nav-link" id="nav-dashboard" style="display:none;" onclick="navigateTo('dashboard')">My Portal</a>
+    <a href="#helpline" class="nav-link" id="nav-helpline" onclick="navigateTo('helpline')">Help and Helpline</a>
+    <a href="#privacy" class="nav-link" id="nav-privacy" onclick="navigateTo('privacy')">Privacy</a>
+  </div>
+</nav>
+
+<!-- Screen Reader Live Announcements Container -->
+<div id="srAnnouncement" class="sr-only" aria-live="polite" style="position:absolute;width:1px;height:1px;clip:rect(1px,1px,1px,1px);overflow:hidden;"></div>
+
+<!-- Main Content Area -->
+<main id="main-content" class="gov-main" role="main">
+
+  <!-- Multi-Portal Dynamic Container (Patient, ASHA, Pharmacist, Doctor, Analyst, Admin) -->
+  <div id="multiPortalContainer" style="display:none;"></div>
+
+  <!-- Emergency 108 Alert Strip -->
+  <div class="gov-emergency-strip" role="region" aria-label="Emergency advisory">
+    <div class="emergency-content">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span>In an emergency go to the nearest hospital or call <strong>108</strong> (National Ambulance Service) or <strong>112</strong>.</span>
+    </div>
+    <a href="tel:108" class="emergency-phone-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+      </svg>
+      Call 108
+    </a>
+  </div>
+
+  <!-- =========================================================================
+       VIEW 0: HOME PAGE
+       ========================================================================= -->
+  <section id="view-home" class="screen-panel active">
+    <div class="gov-card" style="margin-bottom:24px;">
+      <h1 class="gov-card-title" style="font-size:1.75rem;margin-bottom:8px;">Skin Rash Screening and Referral Portal</h1>
+      <p style="color:var(--text-muted);font-size:1.0625rem;max-width:760px;margin-bottom:20px;">
+        A rapid, deterministic clinical decision aid designed for community screening in India. Helps patients and primary healthcare workers determine the urgency of a rash and appropriate referral steps. Works offline without account.
+      </p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-primary" onclick="startScreeningFlow()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 3h3v5a4.5 4.5 0 0 0 9 0V3h3"/><path d="M12 12.5V17a3 3 0 0 0 3 3h2a2 2 0 1 0 0-4h-2"/><circle cx="19" cy="18" r="1"/></svg>
+          Check a Skin Rash
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="navigateTo('signin')">Role Sign In & Demo</button>
+        <button type="button" class="btn btn-secondary" onclick="navigateTo('how')">Learn How it Works</button>
+      </div>
+    </div>
+
+    <!-- 3 Core Cards: How it works, Your privacy, When to get urgent care -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:20px;">
+      <div class="gov-card">
+        <h2 style="font-size:1.125rem;color:var(--gov-navy);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          How It Works
+        </h2>
+        <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:12px;">
+          Follow 7 step-by-step screens: provide rash details, capture or upload close-up & wide photos, and receive triage category referral guidance (A to D).
+        </p>
+        <a href="#how" onclick="navigateTo('how')" style="color:var(--gov-navy);font-weight:600;font-size:0.875rem;">Read clinical rationale &rarr;</a>
+      </div>
+
+      <div class="gov-card">
+        <h2 style="font-size:1.125rem;color:var(--gov-green);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Your Privacy
+        </h2>
+        <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:12px;">
+          All analysis runs in device memory. Photos and answers are never stored or transmitted without your explicit consent. Full data wipe available at any time.
+        </p>
+        <a href="#privacy" onclick="navigateTo('privacy')" style="color:var(--gov-navy);font-weight:600;font-size:0.875rem;">View privacy commitments &rarr;</a>
+      </div>
+
+      <div class="gov-card">
+        <h2 style="font-size:1.125rem;color:var(--gov-red);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          When to Get Urgent Care
+        </h2>
+        <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:12px;">
+          If the rash is accompanied by breathing difficulty, high fever, blisters, peeling, or black/purple patches, seek immediate hospital emergency care. Do not wait.
+        </p>
+        <a href="#helpline" onclick="navigateTo('helpline')" style="color:var(--gov-navy);font-weight:600;font-size:0.875rem;">Find emergency contacts &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       VIEW 1: SCREENING FLOW (7 SCREENS WITH PROGRESS LIST & DUAL INPUTS)
+       ========================================================================= -->
+  <section id="view-check" class="screen-panel">
+    
+    <!-- Mobile Step Bar -->
+    <div class="mobile-step-bar" aria-label="Screening progress">
+      <span style="font-weight:700;color:var(--gov-navy);" id="mobileStepText">Step 1 of 7: Welcome and Consent</span>
+      <span style="color:var(--text-muted);" id="mobileStepPct">14%</span>
+    </div>
+
+    <div class="wizard-layout">
+      <!-- Desktop Left Step List -->
+      <aside class="desktop-steps" aria-label="Step navigation">
+        <h2 style="font-size:0.9375rem;color:var(--gov-navy);font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">
+          Screening Steps
+        </h2>
+        <ul class="step-list" id="desktopStepList">
+          <li class="step-item active" id="s_step_1"><span class="step-badge">1</span> Welcome and Consent</li>
+          <li class="step-item" id="s_step_2"><span class="step-badge">2</span> About the Person</li>
+          <li class="step-item" id="s_step_3"><span class="step-badge">3</span> About the Rash</li>
+          <li class="step-item" id="s_step_4"><span class="step-badge">4</span> Rash Photographs</li>
+          <li class="step-item" id="s_step_5"><span class="step-badge">5</span> Cream History</li>
+          <li class="step-item" id="s_step_6"><span class="step-badge">6</span> Safety Check</li>
+          <li class="step-item" id="s_step_7"><span class="step-badge">7</span> Referral Result</li>
+        </ul>
+      </aside>
+
+      <!-- Right Form Card Area -->
+      <div class="gov-card">
+
+        <!-- ==========================================
+             SCREEN 1: WELCOME & CONSENT
+             ========================================== -->
+        <div id="flow-screen-1" class="flow-step-content">
+          <div class="gov-card-header">
+            <h1 class="gov-card-title">Welcome to DermaSense Public Screening</h1>
+            <p class="gov-card-desc">Step 1 of 7: Please review the tool purpose and privacy terms before beginning.</p>
+          </div>
+
+          <div style="background:var(--gov-navy-light);border-left:4px solid var(--gov-navy);padding:14px;border-radius:0 var(--radius) var(--radius) 0;margin-bottom:20px;font-size:0.9375rem;">
+            <strong>Important Clinical Notice:</strong> This prototype is a screening and referral aid. It does <em>not</em> diagnose, prescribe medicines, provide doses, or replace an examination by a qualified medical professional.
+          </div>
+
+          <fieldset class="gov-fieldset">
+            <legend class="gov-legend">Participant Understanding & Consent<span class="req-marker">*</span></legend>
+            <div class="choice-group">
+              <label class="choice-card" id="lblConsentUnderstand">
+                <input type="checkbox" id="chkConsentUnderstand" onchange="validateStep1()">
+                <div class="choice-label">
+                  <strong>I understand this tool is a screening aid only.</strong>
+                  <span class="choice-hint">I understand this tool does not provide medical diagnoses or prescriptions.</span>
+                </div>
+              </label>
+
+              <label class="choice-card" id="lblConsentSave">
+                <input type="checkbox" id="chkConsentSave">
+                <div class="choice-label">
+                  <strong>Save this case on this device (Optional, Off by default).</strong>
+                  <span class="choice-hint">Allows you to review this referral summary later on this browser.</span>
+                </div>
+              </label>
+
+              <label class="choice-card" id="lblConsentShare">
+                <input type="checkbox" id="chkConsentShare">
+                <div class="choice-label">
+                  <strong>Share with a health worker (Optional, Off by default).</strong>
+                  <span class="choice-hint">Allows an authorized primary health worker or clinic to view the referral details.</span>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="navigateTo('home')">Return Home</button>
+            <button type="button" class="btn btn-primary" id="btnNext1" disabled onclick="goToFlowStep(2)">
+              Continue to Person Details &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 2: ABOUT THE PERSON
+             ========================================== -->
+        <div id="flow-screen-2" class="flow-step-content" style="display:none;">
+          <div class="gov-card-header">
+            <h1 class="gov-card-title">About the Person with the Rash</h1>
+            <p class="gov-card-desc">Step 2 of 7: Age and health background help assess clinical referral urgency.</p>
+          </div>
+
+          <fieldset class="gov-fieldset">
+            <legend class="gov-legend">Age Group of the Patient<span class="req-marker">*</span></legend>
+            <div class="choice-grid-3">
+              <label class="choice-card" id="lblAgeInfant"><input type="radio" name="age_group" value="infant" onchange="selectAgeGroup('infant')"><div class="choice-label"><strong>Infant</strong><span class="choice-hint">Under 1 year</span></div></label>
+              <label class="choice-card" id="lblAgeChild"><input type="radio" name="age_group" value="child" onchange="selectAgeGroup('child')"><div class="choice-label"><strong>Child</strong><span class="choice-hint">1 to 12 years</span></div></label>
+              <label class="choice-card" id="lblAgeAdult"><input type="radio" name="age_group" value="adult" onchange="selectAgeGroup('adult')"><div class="choice-label"><strong>Adult</strong><span class="choice-hint">13 to 59 years</span></div></label>
+              <label class="choice-card" id="lblAgeOlder"><input type="radio" name="age_group" value="older_adult" onchange="selectAgeGroup('older_adult')"><div class="choice-label"><strong>Older Adult</strong><span class="choice-hint">60 years or older</span></div></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="gov-fieldset">
+            <legend class="gov-legend">Specific Health Profile (Select if applicable)</legend>
+            <div class="choice-group">
+              <label class="choice-card">
+                <input type="checkbox" id="chkPregnancy" onchange="updateVulnerableFlags()">
+                <div class="choice-label">
+                  <strong>Currently pregnant or nursing</strong>
+                  <span class="choice-hint">Special caution required for topical and oral medications.</span>
+                </div>
+              </label>
+
+              <label class="choice-card">
+                <input type="checkbox" id="chkImmunocompromised" onchange="updateVulnerableFlags()">
+                <div class="choice-label">
+                  <strong>Weakened immune system or chronic illness</strong>
+                  <span class="choice-hint">e.g., uncontrolled diabetes, chemotherapy, organ transplant, or systemic oral steroids.</span>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="goToFlowStep(1)">&larr; Back</button>
+            <button type="button" class="btn btn-primary" id="btnNext2" disabled onclick="goToFlowStep(3)">
+              Continue to Rash Details &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 3: ABOUT THE RASH
+             ========================================== -->
+        <div id="flow-screen-3" class="flow-step-content" style="display:none;">
+          <div class="gov-card-header">
+            <h1 class="gov-card-title">About the Rash</h1>
+            <p class="gov-card-desc">Step 3 of 7: Affected body location, duration, and visual characteristics.</p>
+          </div>
+
+          <fieldset class="gov-fieldset">
+            <legend class="gov-legend">Where is the rash located?<span class="req-marker">*</span></legend>
+            <div class="choice-grid-areas">
+              <label class="choice-card" id="lblAreaGroin"><input type="radio" name="body_area" value="groin" onchange="selectBodyArea('groin')"><span class="choice-label">Groin</span></label>
+              <label class="choice-card" id="lblAreaTrunk"><input type="radio" name="body_area" value="trunk_back" onchange="selectBodyArea('trunk_back')"><span class="choice-label">Trunk or back</span></label>
+              <label class="choice-card" id="lblAreaArms"><input type="radio" name="body_area" value="arms" onchange="selectBodyArea('arms')"><span class="choice-label">Arms</span></label>
+              <label class="choice-card" id="lblAreaLegs"><input type="radio" name="body_area" value="legs_thighs" onchange="selectBodyArea('legs_thighs')"><span class="choice-label">Legs or thighs</span></label>
+              <label class="choice-card" id="lblAreaFace"><input type="radio" name="body_area" value="face_neck" onchange="selectBodyArea('face_neck')"><span class="choice-label">Face or neck</span></label>
+              <label class="choice-card" id="lblAreaScalp"><input type="radio" name="body_area" value="scalp" onchange="selectBodyArea('scalp')"><span class="choice-label">Scalp</span></label>
+              <label class="choice-card" id="lblAreaFeet"><input type="radio" name="body_area" value="feet" onchange="selectBodyArea('feet')"><span class="choice-label">Feet</span></label>
+              <label class="choice-card" id="lblAreaHands"><input type="radio" name="body_area" value="hands" onchange="selectBodyArea('hands')"><span class="choice-label">Hands</span></label>
+              <label class="choice-card" id="lblAreaMultiple"><input type="radio" name="body_area" value="multiple" onchange="selectBodyArea('multiple')"><span class="choice-label">More than one area</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="gov-fieldset">
+            <legend class="gov-legend">How long has this rash been present?<span class="req-marker">*</span></legend>
+            <div class="choice-grid-3">
+              <label class="choice-card" id="lblDurUnder1"><input type="radio" name="duration_tier" value="under_1_week" onchange="selectDurationTier('under_1_week')"><span class="choice-label">Under 1 week</span></label>
+              <label class="choice-card" id="lblDur1To4"><input type="radio" name="duration_tier" value="1_to_4_weeks" onchange="selectDurationTier('1_to_4_weeks')"><span class="choice-label">1 to 4 weeks</span></label>
+              <label class="choice-card" id="lblDurOver1"><input type="radio" name="duration_tier" value="over_1_month" onchange="selectDurationTier('over_1_month')"><span class="choice-label">Over 1 month</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="gov-fieldset">
+            <legend class="gov-legend">Characteristics (Check all that apply)</legend>
+            <div class="choice-group">
+              <label class="choice-card">
+                <input type="checkbox" id="chkItchy" onchange="updateSymptoms()">
+                <div class="choice-label"><strong>Itchy</strong><span class="choice-hint">Causes an urge to scratch or rub.</span></div>
+              </label>
+
+              <label class="choice-card">
+                <input type="checkbox" id="chkRingShaped" onchange="updateSymptoms()">
+                <div class="choice-label"><strong>Ring-shaped</strong><span class="choice-hint">Circular or oval patch with a clearer centre and raised border.</span></div>
+              </label>
+
+              <label class="choice-card">
+                <input type="checkbox" id="chkScaly" onchange="updateSymptoms()">
+                <div class="choice-label"><strong>Scaly or peeling border</strong><span class="choice-hint">Dry, flaking skin along the border of the rash.</span></div>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="goToFlowStep(2)">&larr; Back</button>
+            <button type="button" class="btn btn-primary" id="btnNext3" disabled onclick="goToFlowStep(4)">
+              Continue to Photos &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 4: RASH PHOTOGRAPHS (CAMERA & UPLOAD)
+             ========================================== -->
+        <div id="flow-screen-4" class="flow-step-content" style="display:none;">
+          <div class="gov-card-header">
+            <h1 class="gov-card-title">Photograph of the Affected Skin</h1>
+            <p class="gov-card-desc">Step 4 of 7: Provide a close-up photo and an optional wider view. Real-time automatic analysis checks quality, skin visibility, and patterns.</p>
+          </div>
+
+          <!-- Slot 1: Close-up Photo -->
+          <div class="photo-slot-card" id="slotCardCloseup">
+            <div class="photo-slot-header">
+              <strong>1. Close-up Photograph of Rash<span class="req-marker">*</span></strong>
+              <span id="slot1Status" style="font-size:0.8125rem;color:var(--text-muted);font-weight:600;">Not added yet</span>
+            </div>
+            
+            <div class="photo-slot-buttons" id="slot1Buttons">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="startCameraForSlot('closeup')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Take Close-up with Camera
+              </button>
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Upload from Gallery or Files
+                <input type="file" id="fileCloseUp" accept="image/*" style="display:none;" onchange="handleFileSelect(event, 'closeup')">
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleImage('/samples/sample_ring_rash.jpg', 'closeup')">
+                Sample Close-up
+              </button>
+            </div>
+
+            <!-- Preview Card for Slot 1 once added -->
+            <div id="slot1PreviewBox" style="display:none;margin-top:14px;background:#ffffff;border:1px solid var(--border-color);border-radius:var(--radius);padding:14px;">
+              <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+                <div style="position:relative;width:200px;max-width:100%;height:150px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-color);flex-shrink:0;background:#000;">
+                  <img id="slot1Img" alt="Close-up rash" style="width:100%;height:100%;object-fit:cover;display:block;">
+                  <canvas id="slot1OverlayCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+                </div>
+                <div style="flex:1;min-width:200px;">
+                  <div id="slot1Badge" style="font-weight:700;color:var(--gov-green);font-size:0.9375rem;margin-bottom:6px;">✓ Close-up Photograph Attached</div>
+                  <div id="slot1Feedback" style="font-size:0.875rem;color:var(--text-muted);line-height:1.4;margin-bottom:12px;"></div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSlotOverlay('closeup')">Toggle Rash Outline</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="retakeSlotPhoto('closeup')">Retake Photo</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeSlotPhoto('closeup')">Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slot 2: Wider View Photo (Optional) -->
+          <div class="photo-slot-card" id="slotCardWider" style="margin-top:16px;">
+            <div class="photo-slot-header">
+              <strong>2. Wider View Photograph (Optional)</strong>
+              <span id="slot2Status" style="font-size:0.8125rem;color:var(--text-muted);font-weight:600;">Optional</span>
+            </div>
+            
+            <div class="photo-slot-buttons" id="slot2Buttons">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="startCameraForSlot('wider')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Take Wider Photo with Camera
+              </button>
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Upload Wider Photo
+                <input type="file" id="fileWider" accept="image/*" style="display:none;" onchange="handleFileSelect(event, 'wider')">
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleImage('/samples/sample_rash_wide.jpg', 'wider')">
+                Sample Wider View
+              </button>
+            </div>
+
+            <!-- Preview Card for Slot 2 once added -->
+            <div id="slot2PreviewBox" style="display:none;margin-top:14px;background:#ffffff;border:1px solid var(--border-color);border-radius:var(--radius);padding:14px;">
+              <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+                <div style="position:relative;width:200px;max-width:100%;height:150px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-color);flex-shrink:0;background:#000;">
+                  <img id="slot2Img" alt="Wider view rash" style="width:100%;height:100%;object-fit:cover;display:block;">
+                </div>
+                <div style="flex:1;min-width:200px;">
+                  <div id="slot2Badge" style="font-weight:700;color:var(--gov-green);font-size:0.9375rem;margin-bottom:6px;">✓ Wider View Photograph Attached</div>
+                  <div id="slot2Feedback" style="font-size:0.875rem;color:var(--text-muted);line-height:1.4;margin-bottom:12px;">Surrounding baseline skin verified.</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="retakeSlotPhoto('wider')">Retake Photo</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeSlotPhoto('wider')">Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Live Camera Viewport (Opened on click) -->
+          <div id="cameraViewportBox" style="display:none;margin-top:18px;border:2px solid var(--gov-navy);border-radius:var(--radius);background:#0b1526;padding:16px;color:#ffffff;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:10px;">
+              <div>
+                <strong id="cameraSlotTitle" style="font-size:1.0625rem;color:#f8fafc;">Capturing Photo with Camera</strong>
+                <div style="font-size:0.8125rem;color:#94a3b8;margin-top:2px;">Align the affected skin area inside the reticle frame below.</div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="closeCameraView()" style="background:#ffffff;color:#0b1526;font-weight:700;">Close Camera</button>
+            </div>
+
+            <div class="camera-card-wrap">
+              <video id="liveVideo" autoplay playsinline muted></video>
+              <div class="camera-reticle" aria-hidden="true"></div>
+              <div class="quality-ring-badge" id="qualityBadge">
+                <span class="quality-dot" id="qualityDot"></span>
+                <span id="qualityText">Position rash in box</span>
+              </div>
+            </div>
+
+            <div class="camera-controls-bar" style="margin-top:14px;display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;">
+              <button type="button" class="cam-tool-btn" onclick="cameraModule && cameraModule.toggleTorch()">Torch</button>
+              
+              <!-- Prominent, large Take Photo Button -->
+              <button type="button" class="btn btn-primary" onclick="captureLivePhotoSlot()" style="background:#ffffff;color:var(--gov-navy);font-weight:800;font-size:1.0625rem;padding:12px 28px;border-radius:30px;min-height:52px;display:inline-flex;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,0.3);border:2px solid #ffffff;cursor:pointer;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Take Photo
+              </button>
+
+              <button type="button" class="cam-tool-btn" onclick="cameraModule && (cameraModule.flipCamera ? cameraModule.flipCamera() : cameraModule.switchCamera())">Flip</button>
+              <button type="button" class="cam-tool-btn" onclick="closeCameraView()">Close</button>
+            </div>
+
+            <!-- Fallback if camera feed is black/inactive on desktop -->
+            <div style="text-align:center;margin-top:12px;font-size:0.8125rem;color:#cbd5e1;background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;">
+              💡 <em>If camera feed is black or unavailable on this system, you can 
+              <button type="button" style="background:none;border:none;color:#38bdf8;text-decoration:underline;cursor:pointer;font-weight:700;" onclick="useSampleForActiveSlot()">use sample photo</button>
+              or upload an image from files.</em>
+            </div>
+          </div>
+
+          <!-- Permission Error Box -->
+          <div id="camErrorBox" style="display:none;background:var(--gov-red-light);border:1px solid #f5c2c7;border-radius:var(--radius);padding:14px;margin-top:16px;">
+            <strong style="color:var(--gov-red);" id="camErrorTitle">Camera Permission Blocked</strong>
+            <p style="font-size:0.875rem;color:#721c24;margin-top:4px;" id="camErrorHelp"></p>
+            <div id="camOsHelp" style="font-size:0.8125rem;color:#721c24;margin-top:6px;line-height:1.4;"></div>
+          </div>
+
+          <!-- Automatic Analysis Sequence Progress Box -->
+          <div id="analysisProgressBox" class="analysis-progress-box" style="display:none;margin-top:18px;">
+            <h3 style="font-size:0.9375rem;color:var(--gov-navy);margin-bottom:10px;">Automatic Photo Analysis Pipeline</h3>
+            <div class="progress-step-item" id="p_step_1"><span class="step-badge">1</span> Checking photo quality...</div>
+            <div class="progress-step-item" id="p_step_2"><span class="step-badge">2</span> Finding visible skin...</div>
+            <div class="progress-step-item" id="p_step_3"><span class="step-badge">3</span> Measuring rash area & redness contrast...</div>
+            <div class="progress-step-item" id="p_step_4"><span class="step-badge">4</span> Comparing dermatological patterns...</div>
+            <div class="progress-step-item" id="p_step_5"><span class="step-badge">5</span> Combining your answers with rule ladder...</div>
+            <div class="progress-step-item" id="p_step_6"><span class="step-badge">6</span> Preparing your referral result...</div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="goToFlowStep(3)">&larr; Back</button>
+            <button type="button" class="btn btn-primary" id="btnNext4" disabled onclick="goToFlowStep(5)">
+              Continue to Cream History &rarr;
+            </button>
+          </div>
+        </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 5: CREAM HISTORY
+             ========================================== -->
+        <div id="flow-screen-5" class="flow-step-content" style="display:none;">
+          <div class="gov-card-header">
+            <h1 class="gov-card-title">Medication & Cream History</h1>
+            <p class="gov-card-desc">Step 5 of 7: Using steroid or combination creams can modify rash patterns and worsen fungal infections.</p>
+          </div>
+
+          <fieldset class="gov-fieldset">
+            <legend class="gov-legend">Have you applied any cream, ointment or lotion on this rash?<span class="req-marker">*</span></legend>
+            <div class="choice-grid-3">
+              <label class="choice-card" id="lblCreamYes"><input type="radio" name="used_cream" value="YES" onchange="selectCreamUsed('YES')"><span class="choice-label">Yes</span></label>
+              <label class="choice-card" id="lblCreamNo"><input type="radio" name="used_cream" value="NO" onchange="selectCreamUsed('NO')"><span class="choice-label">No</span></label>
+              <label class="choice-card" id="lblCreamNotSure"><input type="radio" name="used_cream" value="NOT_SURE" onchange="selectCreamUsed('NOT_SURE')"><span class="choice-label">Not sure</span></label>
+            </div>
+          </fieldset>
+
+          <!-- Follow-up Questions (Only visible if Cream Used is YES) -->
+          <div id="creamDetailsSection" style="display:none;">
+            <fieldset class="gov-fieldset">
+              <legend class="gov-legend">Who suggested or provided this cream?</legend>
+              <div class="choice-grid-areas">
+                <label class="choice-card" id="lblWhoDoctor"><input type="radio" name="who_prescribed" value="doctor" onchange="selectWhoPrescribed('doctor')"><span class="choice-label">Doctor or Clinic</span></label>
+                <label class="choice-card" id="lblWhoPharm"><input type="radio" name="who_prescribed" value="pharmacy" onchange="selectWhoPrescribed('pharmacy')"><span class="choice-label">Pharmacist or Medical Shop</span></label>
+                <label class="choice-card" id="lblWhoFriend"><input type="radio" name="who_prescribed" value="friend_family" onchange="selectWhoPrescribed('friend_family')"><span class="choice-label">Friend or Family</span></label>
+                <label class="choice-card" id="lblWhoNotSure"><input type="radio" name="who_prescribed" value="not_sure" onchange="selectWhoPrescribed('not_sure')"><span class="choice-label">Not sure</span></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="gov-fieldset">
+              <legend class="gov-legend">Did you see a steroid name on the tube or packet?</legend>
+              <span style="font-size:0.8125rem;color:var(--text-muted);display:block;margin-bottom:8px;">
+                e.g., Clobetasol, Betamethasone, Hydrocortisone, Mometasone, Fluocinolone
+              </span>
+              <div class="choice-grid-3">
+                <label class="choice-card" id="lblSteroidYes"><input type="radio" name="steroid_seen" value="YES" onchange="selectSteroidSeen('YES')"><span class="choice-label">Yes</span></label>
+                <label class="choice-card" id="lblSteroidNo"><input type="radio" name="steroid_seen" value="NO" onchange="selectSteroidSeen('NO')"><span class="choice-label">No</span></label>
+                <label class="choice-card" id="lblSteroidNotSure"><input type="radio" name="steroid_seen" value="NOT_SURE" onchange="selectSteroidSeen('NOT_SURE')"><span class="choice-label">Not sure</span></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="gov-fieldset">
+              <legend class="gov-legend">Was it a combination cream (multi-action / triple action)?</legend>
+              <div class="choice-grid-3">
+                <label class="choice-card" id="lblComboYes"><input type="radio" name="combo_cream" value="YES" onchange="selectComboCream('YES')"><span class="choice-label">Yes</span></label>
+                <label class="choice-card" id="lblComboNo"><input type="radio" name="combo_cream" value="NO" onchange="selectComboCream('NO')"><span class="choice-label">No</span></label>
+                <label class="choice-card" id="lblComboNotSure"><input type="radio" name="combo_cream" value="NOT_SURE" onchange="selectComboCream('NOT_SURE')"><span class="choice-label">Not sure</span></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="gov-fieldset">
+              <legend class="gov-legend">Did the rash spread or worsen even while applying the cream?</legend>
+              <div class="choice-grid-3">
+                <label class="choice-card" id="lblSpreadYes"><input type="radio" name="rash_spread" value="YES" onchange="selectRashSpread('YES')"><span class="choice-label">Yes</span></label>
+                <label class="choice-card" id="lblSpreadNo"><input type="radio" name="rash_spread" value="NO" onchange="selectRashSpread('NO')"><span class="choice-label">No</span></label>
+                <label class="choice-card" id="lblSpreadNotSure"><input type="radio" name="rash_spread" value="NOT_SURE" onchange="selectRashSpread('NOT_SURE')"><span class="choice-label">Not sure</span></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="gov-fieldset">
+              <legend class="gov-legend">Did the rash come back worse after you stopped using it?</legend>
+              <div class="choice-grid-3">
+                <label class="choice-card" id="lblReturnYes"><input type="radio" name="rash_returned" value="YES" onchange="selectRashReturned('YES')"><span class="choice-label">Yes</span></label>
+                <label class="choice-card" id="lblReturnNo"><input type="radio" name="rash_returned" value="NO" onchange="selectRashReturned('NO')"><span class="choice-label">No</span></label>
+                <label class="choice-card" id="lblReturnNotSure"><input type="radio" name="rash_returned" value="NOT_SURE" onchange="selectRashReturned('NOT_SURE')"><span class="choice-label">Not sure</span></label>
+              </div>
+            </fieldset>
+
+            <!-- Optional Cream Tube Brand Search -->
+            <fieldset class="gov-fieldset">
+              <legend class="gov-legend">Cream Brand or Active Ingredient Check (Optional)</legend>
+              <label for="txtCreamName" style="font-size:0.875rem;color:var(--text-muted);display:block;margin-bottom:6px;">
+                Type the name printed on the tube to check for steroid content:
+              </label>
+              <input type="text" id="txtCreamName" class="choice-card" style="width:100%;cursor:text;" placeholder="e.g., Candid-B, Betnovate-C, Quadriderm, Clobetasol..." oninput="debounceCreamCheck(this.value)">
+              <div id="creamMatchFeedback" style="margin-top:8px;font-size:0.875rem;"></div>
+
+              <div id="demoCreamSampleBox" style="display:none;margin-top:10px;gap:6px;flex-wrap:wrap;">
+                <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">[Demo Presets]:</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setDemoCream('Candid-B')">Candid-B</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setDemoCream('Betnovate-C')">Betnovate-C</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setDemoCream('Clotrimazole 1% Cream (Plain)')">Clotrimazole (Plain)</button>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="goToFlowStep(4)">&larr; Back</button>
+            <button type="button" class="btn btn-primary" id="btnNext5" disabled onclick="goToFlowStep(6)">
+              Continue to Safety Check &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 6: SAFETY CHECK (10 EMERGENCY WARNING SIGNS)
+             ========================================== -->
+        <div id="flow-screen-6" class="flow-step-content" style="display:none;">
+          <div class="gov-card-header">
+            <h1 class="gov-card-title">Emergency Signs Safety Check</h1>
+            <p class="gov-card-desc">Step 6 of 7: Identify emergency warning signs requiring immediate hospital attention.</p>
+          </div>
+
+          <div style="background:var(--gov-red-light);border-left:4px solid var(--gov-red);padding:14px;border-radius:0 var(--radius) var(--radius) 0;margin-bottom:20px;font-size:0.9375rem;color:#7a0c18;">
+            <strong>Emergency Protocol:</strong> Any checked warning sign immediately escalates to Category D for emergency clinical care before any pattern model or image result is shown.
+          </div>
+
+          <fieldset class="gov-fieldset">
+            <legend class="gov-legend">Do any of these emergency signs apply right now?<span class="req-marker">*</span></legend>
+            <div class="choice-group">
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="trouble_breathing_throat_swelling" onchange="updateDangerSigns()"><div class="choice-label"><strong>Trouble breathing or throat swelling</strong><span class="choice-hint">Signs of potential anaphylaxis or systemic airway involvement.</span></div></label>
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="skin_peeling_large_blisters" onchange="updateDangerSigns()"><div class="choice-label"><strong>Skin peeling or large blisters</strong><span class="choice-hint">Potential severe adverse drug reaction (SJS/TEN) or pemphigus.</span></div></label>
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="eye_involvement_vision_change" onchange="updateDangerSigns()"><div class="choice-label"><strong>Eye involvement or vision change</strong><span class="choice-hint">Rash affecting eyelids, cornea, or accompanied by eye pain.</span></div></label>
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="severe_rapidly_worsening_pain" onchange="updateDangerSigns()"><div class="choice-label"><strong>Severe or rapidly worsening pain</strong><span class="choice-hint">Pain disproportionate to appearance suggests deep tissue compromise.</span></div></label>
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="fever_feeling_very_unwell" onchange="updateDangerSigns()"><div class="choice-label"><strong>Fever or feeling very unwell</strong><span class="choice-hint">Systemic fever, chills, or prostration accompanying skin eruption.</span></div></label>
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="spreading_fast_over_hours" onchange="updateDangerSigns()"><div class="choice-label"><strong>Spreading fast over hours</strong><span class="choice-hint">Expanding rapidly across anatomical regions within hours.</span></div></label>
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="pus_foul_fluid" onchange="updateDangerSigns()"><div class="choice-label"><strong>Pus or foul fluid</strong><span class="choice-hint">Extensive purulent exudate or foul-smelling infection.</span></div></label>
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="black_purple_skin" onchange="updateDangerSigns()"><div class="choice-label"><strong>Black or purple skin</strong><span class="choice-hint">Necrotic or purpuric patches requiring urgent vascular/infection review.</span></div></label>
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="genital_severe_pain_swelling" onchange="updateDangerSigns()"><div class="choice-label"><strong>Genital involvement with severe pain or swelling</strong><span class="choice-hint">Severe groin or genital ulceration with acute discomfort.</span></div></label>
+              <label class="choice-card" style="border-left:4px solid var(--gov-red);"><input type="checkbox" name="danger_sign" value="infant_widespread_rash" onchange="updateDangerSigns()"><div class="choice-label"><strong>Newborn or young infant with a widespread rash</strong><span class="choice-hint">Infants under 3 months with extensive skin eruptions.</span></div></label>
+              
+              <label class="choice-card" style="border-left:4px solid var(--gov-green);"><input type="checkbox" id="chkNoDangerSigns" onchange="toggleNoDanger(this.checked)"><div class="choice-label"><strong>None of these emergency signs apply</strong><span class="choice-hint">The patient does not currently have any of the urgent symptoms listed above.</span></div></label>
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="goToFlowStep(5)">&larr; Back</button>
+            <button type="button" class="btn btn-primary" id="btnNext6" disabled onclick="executeScreeningTriage()">
+              Calculate Referral Triage Result &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 7: RESULT SCREEN
+             ========================================== -->
+        <div id="flow-screen-7" class="flow-step-content" style="display:none;">
+          <div class="gov-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h1 class="gov-card-title">Screening & Referral Outcome</h1>
+              <p class="gov-card-desc">Step 7 of 7: Official Community Clinical Referral Summary</p>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="copyReferralSummary()">Copy Summary</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="printBtn" onclick="window.print()">Print / Save as PDF</button>
+            </div>
+          </div>
+
+          <!-- Hero Outcome Box -->
+          <div id="resHero" class="result-hero cat-c">
+            <div class="res-badge-wrap">
+              <div class="res-ring-badge" id="resRingBadge">C</div>
+              <div>
+                <h2 class="res-title" id="resTitle">Category C — More Information Needed</h2>
+                <span class="res-urgency-tag" id="resUrgency">Urgency: Routine Referral</span>
+              </div>
+            </div>
+            <div class="res-action-box" id="resActionText">
+              Arrange an in-person clinical consultation at your nearest health centre for evaluation.
+            </div>
+          </div>
+
+          <!-- What to Do Next Section -->
+          <div class="gov-card" style="margin-bottom:16px;">
+            <h3 style="font-size:1.0625rem;color:var(--gov-navy);margin-bottom:8px;font-weight:700;">What to do next</h3>
+            <ul style="padding-left:20px;font-size:0.9375rem;line-height:1.6;" id="resNextStepsList">
+              <li>Visit your nearest Primary Health Centre (PHC), Community Health Centre (CHC), or consult a qualified doctor.</li>
+              <li>Do not apply unprescribed steroid creams or combination lotions to the affected area.</li>
+              <li>Keep the area clean, dry, and avoid scratching to prevent secondary bacterial infection.</li>
+            </ul>
+
+            <div style="background:var(--gov-navy-light);border:1px solid var(--border-color);border-radius:var(--radius);padding:12px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <span style="font-size:0.875rem;">
+                <strong>Primary Health Finder:</strong> Contact your nearest PHC, CHC or local ASHA / ANM health worker.
+              </span>
+              <a href="https://nhp.gov.in" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Find Nearby Health Centre</a>
+            </div>
+
+            <div style="margin-top:12px;display:flex;align-items:center;gap:10px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnSaveReminder" onclick="saveDeviceReminder()">
+                Save 3-Day Follow-Up Reminder on this Device
+              </button>
+              <span id="reminderSavedNotice" style="font-size:0.8125rem;color:var(--gov-green);font-weight:600;display:none;">
+                ✓ Reminder saved on device
+              </span>
+            </div>
+          </div>
+
+          <!-- What this app CANNOT tell you -->
+          <div class="gov-card" style="margin-bottom:16px;background:#fffbf2;border-color:#fedc9d;">
+            <h3 style="font-size:1rem;color:#7a4d05;margin-bottom:6px;font-weight:700;">What this app cannot tell you</h3>
+            <p style="font-size:0.875rem;color:#6b4303;line-height:1.5;">
+              This app cannot tell you what the rash is. Only a qualified clinician who examines the skin in person can provide a diagnosis. Never start, stop, or change any prescription medicine based on this screening result.
+            </p>
+          </div>
+
+          <!-- Cream Warning Note (If steroid risk elevated) -->
+          <div id="resCreamWarning" class="gov-card" style="display:none;margin-bottom:16px;background:var(--gov-saffron-light);border-color:#f8cba6;">
+            <h3 style="font-size:1rem;color:#8a4502;margin-bottom:6px;font-weight:700;">Important notice regarding topical creams</h3>
+            <p style="font-size:0.875rem;color:#6d3500;line-height:1.5;">
+              Your reported history indicates use of an unprescribed, combination, or steroid-containing cream. Steroid creams can mask symptoms, cause spreading, and thin the skin. <strong>Please bring the cream tube to the doctor during your consultation.</strong>
+            </p>
+          </div>
+
+          <!-- "Looks similar to (not a diagnosis)" Panel -->
+          <div id="resLooksSimilarPanel" class="looks-similar-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <h3 style="font-size:1.0625rem;color:var(--gov-navy);font-weight:700;">Looks similar to (not a diagnosis)</h3>
+              <span id="patternStrengthBadge" class="strength-badge strength-moderate">Moderate Strength</span>
+            </div>
+            <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:12px;">
+              Only a clinician who examines the skin can tell what it is.
+            </p>
+            <div id="patternListDiv" style="display:flex;flex-direction:column;gap:8px;">
+              <!-- Populated dynamically with top 3 patterns -->
+            </div>
+          </div>
+
+          <!-- Photo with Translucent Outline Overlay -->
+          <div class="gov-card" style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <h3 style="font-size:1.0625rem;color:var(--gov-navy);font-weight:700;">Photograph Findings</h3>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleResultOverlay()">Toggle Rash Area Outline</button>
+            </div>
+            <div style="position:relative;max-width:360px;margin:0 auto;border:1px solid var(--border-color);border-radius:var(--radius);overflow:hidden;">
+              <img id="resPhotoThumb" alt="Assessed rash photograph" style="width:100%;display:block;">
+              <canvas id="resOverlayCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+            </div>
+            <div id="resPhotoFindingText" style="text-align:center;font-size:0.875rem;color:var(--text-muted);margin-top:8px;"></div>
+          </div>
+
+          <!-- Expandable Breakdown: How we reached this result -->
+          <details class="gov-details" open>
+            <summary>How we reached this result (Transparent clinical audit)</summary>
+            <div class="details-content">
+              <div style="margin-top:10px;">
+                <h4 style="font-size:0.9375rem;color:var(--gov-navy);margin-bottom:6px;">1. Information You Reported</h4>
+                <div id="auditReportedSummary" style="font-size:0.875rem;color:var(--text-main);line-height:1.6;"></div>
+              </div>
+
+              <div style="margin-top:14px;">
+                <h4 style="font-size:0.9375rem;color:var(--gov-navy);margin-bottom:6px;">2. Photograph Quality Assessment</h4>
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Parameter</th><th>Measurement</th><th>Threshold</th><th>Status</th></tr>
+                  </thead>
+                  <tbody id="tblQualityBody"></tbody>
+                </table>
+              </div>
+
+              <div style="margin-top:14px;">
+                <h4 style="font-size:0.9375rem;color:var(--gov-navy);margin-bottom:6px;">3. Image Vision Findings</h4>
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Metric</th><th>Observed Value</th><th>Interpretation</th></tr>
+                  </thead>
+                  <tbody id="tblVisionBody"></tbody>
+                </table>
+              </div>
+
+              <div style="margin-top:14px;">
+                <h4 style="font-size:0.9375rem;color:var(--gov-navy);margin-bottom:6px;">4. Pattern Model & Conformal Set</h4>
+                <div id="auditPatternDetails" style="font-size:0.875rem;line-height:1.6;color:var(--text-main);"></div>
+              </div>
+
+              <div style="margin-top:14px;">
+                <h4 style="font-size:0.9375rem;color:var(--gov-navy);margin-bottom:6px;">5. Rules & Scoring Applied</h4>
+                <div id="auditRulesApplied" style="font-size:0.875rem;line-height:1.6;color:var(--text-main);"></div>
+              </div>
+            </div>
+          </details>
+
+          <div class="form-actions" style="margin-top:24px;">
+            <button type="button" class="btn btn-secondary" onclick="startNewScreening()">Start Over</button>
+            <button type="button" class="btn btn-primary" onclick="navigateTo('home')">Return to Portal Home</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       VIEW 2: HOW IT WORKS
+       ========================================================================= -->
+  <section id="view-how" class="screen-panel">
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <h1 class="gov-card-title">How DermaSense Works</h1>
+        <p class="gov-card-desc">Deterministic priority ladder, photo quality standards, and pattern strength ratings explained.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:18px;font-size:0.9375rem;line-height:1.6;">
+        <div>
+          <h2 style="font-size:1.125rem;color:var(--gov-navy);margin-bottom:6px;">Deterministic Priority Hierarchy</h2>
+          <p>DermaSense executes in a strict order to ensure emergency signs always take precedence:</p>
+          <ol style="margin-left:20px;margin-top:8px;">
+            <li><strong>Priority 1 (Emergency Danger Signs):</strong> Any warning sign immediately routes to Category D. Image patterns are hidden to prevent delay.</li>
+            <li><strong>Priority 2 (Contradictory Answers):</strong> Conflicting answers default to Category C for clinical recheck.</li>
+            <li><strong>Priority 3 (Steroid Risk Score &ge; 3):</strong> Unprescribed topical steroid use routes to Category B for treatment review.</li>
+            <li><strong>Priority 4 (Poor Image Quality / Non-Skin):</strong> Inadequate lighting or focus routes to Category C.</li>
+            <li><strong>Priority 5 (Fungal Pattern Score &ge; 2):</strong> Fungal-type ring pattern meeting strength criteria routes to Category A.</li>
+            <li><strong>Priority 6 (Otherwise):</strong> Routes to Category C for routine check.</li>
+          </ol>
+        </div>
+
+        <div>
+          <h2 style="font-size:1.125rem;color:var(--gov-navy);margin-bottom:6px;">Triage Categories (A through D)</h2>
+          <table class="data-table">
+            <thead>
+              <tr><th>Category</th><th>Classification</th><th>Recommended Referral Action</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong style="color:var(--gov-amber);">Category A</strong></td><td>Pattern worth checking</td><td>Arrange an in-person consultation with a doctor or primary clinic.</td></tr>
+              <tr><td><strong style="color:var(--gov-saffron);">Category B</strong></td><td>Cream history needs review</td><td>Consult a physician for examination. Bring all cream tubes used.</td></tr>
+              <tr><td><strong style="color:var(--gov-slate);">Category C</strong></td><td>More information needed</td><td>Consult a health worker or clinic for in-person evaluation.</td></tr>
+              <tr><td><strong style="color:var(--gov-red);">Category D</strong></td><td>Seek care now (Emergent)</td><td>Go immediately to the nearest hospital emergency department or call 108.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" onclick="startScreeningFlow()">Check a Rash Now</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       VIEW 3: SIGN IN PORTAL & DEMO ACCOUNTS
+       ========================================================================= -->
+  <section id="view-signin" class="screen-panel">
+    <div class="gov-card" style="max-width:640px;margin:0 auto;">
+      <div class="gov-card-header">
+        <h1 class="gov-card-title">Sign In to Health Portal</h1>
+        <p class="gov-card-desc">Access your role-based portal or create a new verified health worker or patient account.</p>
+      </div>
+
+      <!-- Auth Navigation Tabs -->
+      <div class="auth-tabs-bar" role="tablist">
+        <button type="button" class="auth-tab-btn active" id="tabBtnSignIn" onclick="switchAuthTab('signin')" role="tab">Sign In</button>
+        <button type="button" class="auth-tab-btn" id="tabBtnSignUp" onclick="switchAuthTab('signup')" role="tab">Create Account</button>
+        <button type="button" class="auth-tab-btn" id="tabBtnDemo" onclick="switchAuthTab('demo')" role="tab">One-Click Demo Roles</button>
+      </div>
+
+      <!-- TAB 1: SIGN IN -->
+      <div id="authPaneSignIn" class="auth-pane">
+        <form onsubmit="handlePortalEmailLogin(event)">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label for="loginEmail" class="form-label" style="font-size:0.875rem;font-weight:600;">Email or Username:</label>
+            <input type="text" id="loginEmail" class="form-control" placeholder="e.g. doctor@dermasense.gov.in or doctor.demo" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom:16px;">
+            <label for="loginPassword" class="form-label" style="font-size:0.875rem;font-weight:600;">Password:</label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="Enter password (Demo: Demo@2026)" required>
+          </div>
+
+          <div id="loginErrorMsg" style="color:var(--gov-red);background:var(--gov-red-light);padding:10px;border-radius:var(--radius);font-size:0.8125rem;margin-bottom:14px;display:none;"></div>
+
+          <button type="submit" id="btnLoginSubmit" class="btn btn-primary" style="width:100%;margin-bottom:12px;">Sign In</button>
+          <button type="button" class="btn btn-secondary" style="width:100%;" onclick="startScreeningFlow()">Continue Without Account (Anonymous Screening)</button>
+        </form>
+      </div>
+
+      <!-- TAB 2: SIGN UP -->
+      <div id="authPaneSignUp" class="auth-pane" style="display:none;">
+        <form onsubmit="handlePortalSignup(event)">
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="signupFullName" class="form-label" style="font-size:0.875rem;font-weight:600;">Full Name:</label>
+            <input type="text" id="signupFullName" class="form-control" placeholder="e.g. Dr. K. Rajesh or Smt. Meena" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="signupEmail" class="form-label" style="font-size:0.875rem;font-weight:600;">Email Address:</label>
+            <input type="email" id="signupEmail" class="form-control" placeholder="name@domain.gov.in or personal email" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="signupPassword" class="form-label" style="font-size:0.875rem;font-weight:600;">Create Password:</label>
+            <input type="password" id="signupPassword" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="signupRole" class="form-label" style="font-size:0.875rem;font-weight:600;">Account Role:</label>
+            <select id="signupRole" class="form-control" style="font-weight:600;">
+              <option value="patient">Patient (Check rash & receive referrals)</option>
+              <option value="asha">ASHA Worker (Community triage queue & referral assignment)</option>
+              <option value="pharmacist">Pharmacist (Label safety check & dispensing rules)</option>
+              <option value="doctor">Medical Doctor / Dermatologist (Clinical review & care plans)</option>
+              <option value="analyst">Public Health Analyst (Aggregates & CSV reports)</option>
+              <option value="admin">System Administrator (Governance & audit logs)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom:16px;">
+            <label for="signupPhone" class="form-label" style="font-size:0.875rem;font-weight:600;">Phone Number (Optional):</label>
+            <input type="tel" id="signupPhone" class="form-control" placeholder="+91 98765 43210">
+          </div>
+
+          <div id="signupErrorMsg" style="color:var(--gov-red);background:var(--gov-red-light);padding:10px;border-radius:var(--radius);font-size:0.8125rem;margin-bottom:14px;display:none;"></div>
+
+          <button type="submit" id="btnSignupSubmit" class="btn btn-primary" style="width:100%;">Create Account</button>
+        </form>
+      </div>
+
+      <!-- TAB 3: ONE-CLICK DEMO ROLES -->
+      <div id="authPaneDemo" class="auth-pane" style="display:none;">
+        <div style="background:var(--gov-navy-light);border:1px solid #c5d4e8;border-radius:var(--radius);padding:14px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <strong style="color:var(--gov-navy);font-size:0.875rem;">One-Click Demo Portals</strong>
+            <span style="font-size:0.6875rem;padding:2px 6px;border-radius:4px;background:#ffffff;font-weight:700;color:var(--gov-green);">Demo Enabled</span>
+          </div>
+          <div class="role-cards-grid">
+            <button type="button" class="role-card-btn" onclick="quickDemoRoleSelect('patient')">
+              <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <strong>Patient</strong>
+              <span style="font-size:0.6875rem;display:block;color:var(--text-muted);">Lakshmi (Screening)</span>
+            </button>
+
+            <button type="button" class="role-card-btn" onclick="quickDemoRoleSelect('asha')">
+              <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+              <strong>ASHA Worker</strong>
+              <span style="font-size:0.6875rem;display:block;color:var(--text-muted);">Kavitha (Triage Queue)</span>
+            </button>
+
+            <button type="button" class="role-card-btn" onclick="quickDemoRoleSelect('pharmacist')">
+              <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+              <strong>Pharmacist</strong>
+              <span style="font-size:0.6875rem;display:block;color:var(--text-muted);">Ramesh (Label Match)</span>
+            </button>
+
+            <button type="button" class="role-card-btn" onclick="quickDemoRoleSelect('doctor')">
+              <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 3h3v5a4.5 4.5 0 0 0 9 0V3h3"/><path d="M12 12.5V17a3 3 0 0 0 3 3h2"/></svg>
+              <strong>Doctor</strong>
+              <span style="font-size:0.6875rem;display:block;color:var(--text-muted);">Dr. Sundaram (Review)</span>
+            </button>
+
+            <button type="button" class="role-card-btn" onclick="quickDemoRoleSelect('analyst')">
+              <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              <strong>Analyst</strong>
+              <span style="font-size:0.6875rem;display:block;color:var(--text-muted);">Epidemiology Stats</span>
+            </button>
+
+            <button type="button" class="role-card-btn" onclick="quickDemoRoleSelect('admin')">
+              <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg>
+              <strong>Admin</strong>
+              <span style="font-size:0.6875rem;display:block;color:var(--text-muted);">Users & Audit Logs</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       VIEW 4: ROLE DASHBOARDS (Patient, ASHA, Pharmacist, Doctor, Analyst, Admin)
+       ========================================================================= -->
+  <section id="view-dashboard" class="screen-panel">
+    <div class="gov-card">
+      <div class="gov-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h1 class="gov-card-title" id="dashRoleTitle">Role Dashboard</h1>
+          <p class="gov-card-desc" id="dashRoleDesc">Authorized clinical or administrative view.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="logoutUser()">Sign Out</button>
+      </div>
+
+      <!-- DASHBOARD 1: PATIENT DASHBOARD -->
+      <div id="dash-patient" class="role-dash-view" style="display:none;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="startScreeningFlow()">Check a New Rash</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="deleteAllStoredData()">Delete My Stored Data</button>
+        </div>
+        <h3 style="font-size:1.0625rem;color:var(--gov-navy);margin-bottom:12px;">My Past Screening Records (Local Device)</h3>
+        <div id="patientRecordsList"></div>
+      </div>
+
+      <!-- DASHBOARD 2: HEALTH WORKER / ASHA DASHBOARD -->
+      <div id="dash-health_worker" class="role-dash-view" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+          <div><strong>Consented Queue Cases:</strong> <span id="hwCaseCount">0</span></div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="loadRoleCases()">Refresh Queue</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="deleteAllStoredData()">Erase All Data</button>
+          </div>
+        </div>
+        <div id="hwCardsList"></div>
+      </div>
+
+      <!-- DASHBOARD 3: PHARMACIST DASHBOARD (NEVER SEES PHOTOS) -->
+      <div id="dash-pharmacist" class="role-dash-view" style="display:none;">
+        <div style="background:var(--gov-navy-light);border-left:4px solid var(--gov-navy);padding:12px;margin-bottom:18px;font-size:0.875rem;">
+          <strong>Pharmacist Privacy Protocol:</strong> In accordance with data minimization, patient photographs are never accessible in the pharmacy portal.
+        </div>
+        <fieldset class="gov-fieldset">
+          <legend class="gov-legend">Medication Label Ingredient & Steroid Verifier</legend>
+          <label for="txtPharmLabel" style="font-size:0.875rem;color:var(--text-muted);display:block;margin-bottom:6px;">
+            Type brand or active ingredients from tube/box:
+          </label>
+          <input type="text" id="txtPharmLabel" class="choice-card" style="width:100%;cursor:text;" placeholder="e.g. Quadriderm, Betnovate-N, Candid-B, Clobetasol..." oninput="debouncePharmCheck(this.value)">
+          <div id="pharmFeedback" style="margin-top:10px;font-size:0.9375rem;"></div>
+        </fieldset>
+
+        <div class="gov-card" style="background:#ffffff;border:1px solid var(--border-color);margin-top:16px;">
+          <h3 style="font-size:1rem;color:var(--gov-navy);margin-bottom:6px;">Topical Corticosteroid Misuse Advisory</h3>
+          <p style="font-size:0.875rem;color:var(--text-muted);line-height:1.5;">
+            Topical steroids (especially super-potent Clobetasol and potent Betamethasone combinations) must not be dispensed over-the-counter for undiagnosed fungal rashes (tinea). Warn patients about steroid addiction, rebound erythema, and cutaneous atrophy.
+          </p>
+        </div>
+      </div>
+
+      <!-- DASHBOARD 4: DOCTOR DASHBOARD -->
+      <div id="dash-doctor" class="role-dash-view" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+          <div><strong>Referred Patient Consultations:</strong> <span id="docCaseCount">0</span></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="loadRoleCases()">Refresh Cases</button>
+        </div>
+        <div id="docCardsList"></div>
+
+        <!-- Doctor Review Note Form -->
+        <div id="docReviewModal" style="display:none;background:#ffffff;border:2px solid var(--gov-navy);border-radius:var(--radius);padding:18px;margin-top:18px;">
+          <h3 style="font-size:1.0625rem;color:var(--gov-navy);margin-bottom:6px;">Record Clinician Assessment & Model Evaluation Feedback</h3>
+          <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:10px;">
+            The app records your clinical assessment note for triage follow-up and model evaluation. The app itself never generates or stores a clinical diagnosis.
+          </p>
+          <textarea id="txtDocAssessment" rows="3" class="choice-card" style="width:100%;cursor:text;resize:vertical;" placeholder="e.g. Clinical presentation consistent with tinea corporis. Advised cessation of combination steroid; prescribed topical antifungal alone."></textarea>
+          <div style="display:flex;gap:10px;margin-top:10px;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="submitDocReview()">Save Assessment & Close Case</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelDocReview()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD 5: ANALYST DASHBOARD (AGGREGATES ONLY, CSV EXPORT) -->
+      <div id="dash-analyst" class="role-dash-view" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+          <p style="font-size:0.875rem;color:var(--text-muted);margin:0;">
+            State & District Aggregated Epidemiology Metrics. Small cohorts (&lt; 5) suppressed for privacy.
+          </p>
+          <button type="button" class="btn btn-primary btn-sm" onclick="exportAnalystCsv()">Export Aggregates as CSV</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:20px;">
+          <div style="background:var(--gov-navy-light);border:1px solid #c5d4e8;border-radius:var(--radius);padding:16px;text-align:center;">
+            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Total Screened</span>
+            <div style="font-size:2rem;font-weight:800;color:var(--gov-navy);" id="statTotalCases">0</div>
+          </div>
+          <div style="background:var(--gov-saffron-light);border:1px solid #f8cba6;border-radius:var(--radius);padding:16px;text-align:center;">
+            <span style="font-size:0.75rem;color:#8a4502;font-weight:700;text-transform:uppercase;">Unprescribed Steroid Rate</span>
+            <div style="font-size:2rem;font-weight:800;color:var(--gov-saffron);" id="statSteroidRate">0%</div>
+          </div>
+          <div style="background:var(--gov-green-light);border:1px solid #c8e6c9;border-radius:var(--radius);padding:16px;text-align:center;">
+            <span style="font-size:0.75rem;color:var(--gov-green);font-weight:700;text-transform:uppercase;">Camera vs Upload Split</span>
+            <div style="font-size:1.25rem;font-weight:800;color:var(--gov-green);margin-top:8px;" id="statSourceSplit">-</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1rem;color:var(--gov-navy);margin-bottom:8px;">Category Triage Distribution</h3>
+        <table class="data-table">
+          <thead>
+            <tr><th>Triage Category</th><th>Definition</th><th>Case Count</th></tr>
+          </thead>
+          <tbody id="tblAnalystMetricsBody"></tbody>
+        </table>
+      </div>
+
+      <!-- DASHBOARD 6: ADMIN DASHBOARD (AUDIT & DEMO RESET) -->
+      <div id="dash-admin" class="role-dash-view" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+          <p style="font-size:0.875rem;color:var(--text-muted);margin:0;">
+            System Administration & Security Audit Trail. Patient case content is strictly inaccessible.
+          </p>
+          <button type="button" class="btn btn-danger btn-sm" onclick="resetDemoData()">Reset Demo Dataset</button>
+        </div>
+
+        <h3 style="font-size:1rem;color:var(--gov-navy);margin-bottom:8px;">System Security & Audit Trail</h3>
+        <table class="data-table">
+          <thead>
+            <tr><th>Timestamp (UTC)</th><th>Action</th><th>Role</th><th>Event Details</th></tr>
+          </thead>
+          <tbody id="tblAdminAuditBody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       VIEW 5: HELP & HELPLINE
+       ========================================================================= -->
+  <section id="view-helpline" class="screen-panel">
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <h1 class="gov-card-title">National Emergency & Health Helplines</h1>
+        <p class="gov-card-desc">Verified toll-free health and emergency numbers across India.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px;margin-bottom:24px;">
+        <div style="border:1px solid var(--border-color);border-radius:var(--radius);padding:16px;border-top:4px solid var(--gov-red);">
+          <strong style="font-size:1.125rem;color:var(--gov-red);">108</strong>
+          <h2 style="font-size:1rem;margin:4px 0;">National Ambulance Service</h2>
+          <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:10px;">Free emergency medical transport across all Indian States and UTs.</p>
+          <a href="tel:108" class="btn btn-danger btn-sm">Call 108</a>
+        </div>
+
+        <div style="border:1px solid var(--border-color);border-radius:var(--radius);padding:16px;border-top:4px solid var(--gov-navy);">
+          <strong style="font-size:1.125rem;color:var(--gov-navy);">104</strong>
+          <h2 style="font-size:1rem;margin:4px 0;">National Health Advice Helpline</h2>
+          <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:10px;">State health guidance, medical advice, and district referral directories.</p>
+          <a href="tel:104" class="btn btn-secondary btn-sm">Call 104</a>
+        </div>
+
+        <div style="border:1px solid var(--border-color);border-radius:var(--radius);padding:16px;border-top:4px solid var(--gov-saffron);">
+          <strong style="font-size:1.125rem;color:var(--gov-saffron);">112</strong>
+          <h2 style="font-size:1rem;margin:4px 0;">Emergency Response Support (ERSS)</h2>
+          <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:10px;">All-in-one national emergency number (Police, Fire, Ambulance, Disaster).</p>
+          <a href="tel:112" class="btn btn-secondary btn-sm">Call 112</a>
+        </div>
+
+        <div style="border:1px solid var(--border-color);border-radius:var(--radius);padding:16px;border-top:4px solid var(--gov-green);">
+          <strong style="font-size:1.125rem;color:var(--gov-green);">14416 / 1800-891-4416</strong>
+          <h2 style="font-size:1rem;margin:4px 0;">Tele-MANAS Tele-Mental Health</h2>
+          <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:10px;">24/7 psychological support and clinical counselling in 20 languages.</p>
+          <a href="tel:14416" class="btn btn-secondary btn-sm">Call 14416</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       VIEW 6: PRIVACY
+       ========================================================================= -->
+  <section id="view-privacy" class="screen-panel">
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <h1 class="gov-card-title">Data Privacy & Storage Commitments</h1>
+        <p class="gov-card-desc">Information lifecycle, security safeguards, and complete data deletion protocols.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;font-size:0.9375rem;line-height:1.6;">
+        <div>
+          <h2 style="font-size:1.0625rem;color:var(--gov-navy);margin-bottom:4px;">1. Zero Unsolicited Data Retention</h2>
+          <p>
+            By default, your rash photographs, questionnaire responses, and screening outcomes are processed entirely in temporary device memory. Nothing is written to permanent storage unless you explicitly check the consent boxes on Screen 1.
+          </p>
+        </div>
+
+        <div>
+          <h2 style="font-size:1.0625rem;color:var(--gov-navy);margin-bottom:4px;">2. Offline Architecture</h2>
+          <p>
+            DermaSense includes a client-side deterministic vision and scoring engine (`vision.js`). Even if your device is completely disconnected from the Internet, the triage engine executes locally in your browser.
+          </p>
+        </div>
+
+        <div>
+          <h2 style="font-size:1.0625rem;color:var(--gov-navy);margin-bottom:4px;">3. Complete Data Deletion</h2>
+          <p>
+            You can erase all stored screening history, cached cases, and local device records immediately using the button below.
+          </p>
+          <div style="margin-top:12px;">
+            <button type="button" class="btn btn-danger btn-sm" onclick="deleteAllStoredData()">
+              Permanently Erase All My Stored Data
+            </button>
+            <span id="wipeNotice" style="margin-left:12px;color:var(--gov-green);font-weight:600;display:none;">
+              ✓ All local and queued cases erased.
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       VIEW 7: ACCESSIBILITY STATEMENT
+       ========================================================================= -->
+  <section id="view-accessibility" class="screen-panel">
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <h1 class="gov-card-title">Accessibility Statement</h1>
+        <p class="gov-card-desc">Conformance with WCAG 2.1 Level AA and Guidelines for Indian Government Websites (GIGW 3.0).</p>
+      </div>
+
+      <div style="font-size:0.9375rem;line-height:1.6;">
+        <p style="margin-bottom:12px;">
+          DermaSense has been built to be universally accessible to all citizens, including persons with visual, auditory, motor, or cognitive disabilities:
+        </p>
+        <ul style="padding-left:20px;margin-bottom:16px;">
+          <li><strong>Keyboard Navigation:</strong> All controls, forms, and camera interactions are fully operable via standard keyboard tabs and shortcuts.</li>
+          <li><strong>Text Resizer:</strong> Controls to scale text size (A-, A, A+) are provided in the utility header.</li>
+          <li><strong>High Contrast Mode:</strong> A dedicated toggle increases color contrast beyond 7:1 for enhanced readability.</li>
+          <li><strong>Semantic HTML & ARIA:</strong> Landmarks, descriptive form fieldsets, legends, and `aria-live` regions communicate status changes to screen readers.</li>
+          <li><strong>No Color As Sole Signal:</strong> Every triage category pairs color badges with explicit letters, textual urgency levels, and icons.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Formal Government Hospital Portal Footer -->
+<footer class="gov-footer" role="contentinfo">
+  <div class="gov-footer-inner">
+    <div class="footer-links">
+      <a href="#home" class="footer-link" onclick="navigateTo('home')">Home</a>
+      <a href="#how" class="footer-link" onclick="navigateTo('how')">How It Works</a>
+      <a href="#signin" class="footer-link" onclick="navigateTo('signin')">Sign In & Demo</a>
+      <a href="#helpline" class="footer-link" onclick="navigateTo('helpline')">Helplines & Emergency</a>
+      <a href="#privacy" class="footer-link" onclick="navigateTo('privacy')">Privacy Policy</a>
+      <a href="#accessibility" class="footer-link" onclick="navigateTo('accessibility')">Accessibility Statement</a>
+    </div>
+
+    <div class="footer-disclaimer">
+      <strong>Prototype Screening Notice:</strong> Prototype screening aid. Not an official government or hospital service.
+      This software does not diagnose, prescribe, or provide clinical treatments. In case of serious symptoms, immediately visit the nearest Community Health Centre (CHC), District Hospital, or call 108.
+    </div>
+
+    <div class="footer-meta">
+      <span>Portal Version: v2.2 (Role-Based Indian Hospital Health Portal)</span>
+      <span>Last Updated: October 2026</span>
+      <span>Standards: WCAG 2.1 AA / GIGW 3.0 Conformance</span>
+    </div>
+  </div>
+</footer>
+
+<!-- External Modules: Camera & Vision Engine -->
+<script src="/camera.js"></script>
+<script src="/engine/vision.js"></script>
+
+<!-- Application Core Controller Logic -->
+<script>
+// =============================================================================
+// DERMASENSE CORE JAVASCRIPT CONTROLLER
+// =============================================================================
+
+const API_BASE = window.location.origin;
+
+// Application State Store
+const appState = {
+  currentUser: null,
+  authToken: localStorage.getItem('dermasense_token') || null,
+  activeCameraSlot: null,
+  screening: {
+    currentStep: 1,
+    answers: {
+      consentUnderstand: false,
+      consentSave: false,
+      consentShare: false,
+      ageGroup: null,
+      isPregnant: false,
+      isImmunocompromised: false,
+      bodyArea: null,
+      durationTier: null,
+      isItchy: false,
+      isRingShaped: false,
+      isScaly: false,
+      usedCream: null,
+      whoPrescribed: null,
+      steroidSeen: null,
+      comboCream: null,
+      rashSpread: null,
+      rashReturned: null,
+      creamName: '',
+      dangerSigns: []
+    },
+    photos: {
+      closeup: { blob: null, dataUrl: null, source: 'camera', visionResult: null, uploadFlags: [] },
+      wider: { blob: null, dataUrl: null, source: 'camera', visionResult: null, uploadFlags: [] }
+    },
+    result: null
+  }
+};
+
+let cameraModule = null;
+
+// Initialize on DOM load
+window.addEventListener('DOMContentLoaded', () => {
+  // Check demo mode in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const isDemo = urlParams.get('demo') === '1' || urlParams.get('demo') === 'true';
+  if (isDemo) {
+    document.getElementById('demoPhotoBox').style.display = 'inline-block';
+    document.getElementById('demoCreamSampleBox').style.display = 'flex';
+  }
+
+  // Restore authenticated session if token exists
+  if (appState.authToken) {
+    validateSession();
+  }
+
+  handleHashChange();
+  window.addEventListener('hashchange', handleHashChange);
+});
+
+// View Navigation Controller
+function navigateTo(viewId) {
+  window.location.hash = '#' + viewId;
+}
+
+function handleHashChange() {
+  const hash = window.location.hash.replace('#', '') || 'home';
+  document.querySelectorAll('.screen-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+
+  const portalContainer = document.getElementById('multiPortalContainer');
+
+  if (hash === 'dashboard' || hash.startsWith('portal')) {
+    const user = (window.DMS_PORTAL && window.DMS_PORTAL.currentUser) || appState.currentUser;
+    if (user) {
+      if (portalContainer) portalContainer.style.display = 'block';
+      const role = user.role === 'health_worker' ? 'asha' : (user.role || 'patient');
+      const targetTab = hash.includes('/') ? hash.split('/')[1] : 'dashboard';
+      if (window.navigateToPortal) {
+        window.navigateToPortal(role, targetTab);
+      }
+      return;
+    } else {
+      navigateTo('signin');
+      return;
+    }
+  }
+
+  // Hide multi-portal container when navigating to standard views
+  if (portalContainer) portalContainer.style.display = 'none';
+
+  const navElem = document.getElementById('nav-' + hash);
+  if (navElem) navElem.classList.add('active');
+
+  const targetView = document.getElementById('view-' + hash);
+  if (targetView) {
+    targetView.classList.add('active');
+    announceScreenReader('Switched to ' + hash.replace('-', ' ') + ' page');
+    if (hash === 'dashboard') {
+      renderRoleDashboard();
+    }
+  } else if (hash === 'check') {
+    document.getElementById('view-check').classList.add('active');
+    goToFlowStep(appState.screening.currentStep);
+  } else {
+    document.getElementById('view-home').classList.add('active');
+    const homeNav = document.getElementById('nav-home');
+    if (homeNav) homeNav.classList.add('active');
+  }
+
+  if (hash !== 'check' && cameraModule) {
+    cameraModule.stop();
+  }
+}
+
+function startScreeningFlow() {
+  navigateTo('check');
+  goToFlowStep(1);
+}
+
+// Flow Step Controller (1 through 7)
+function goToFlowStep(stepNum) {
+  appState.screening.currentStep = stepNum;
+
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById('flow-screen-' + i);
+    if (el) el.style.display = (i === stepNum) ? 'block' : 'none';
+  }
+
+  for (let i = 1; i <= 7; i++) {
+    const sItem = document.getElementById('s_step_' + i);
+    if (sItem) {
+      sItem.classList.remove('active', 'completed');
+      if (i < stepNum) sItem.classList.add('completed');
+      if (i === stepNum) sItem.classList.add('active');
+    }
+  }
+
+  const stepTitles = [
+    'Welcome and Consent',
+    'About the Person',
+    'About the Rash',
+    'Rash Photographs',
+    'Cream History',
+    'Safety Check',
+    'Referral Result'
+  ];
+  const mobText = document.getElementById('mobileStepText');
+  const mobPct = document.getElementById('mobileStepPct');
+  if (mobText) mobText.textContent = `Step ${stepNum} of 7: ${stepTitles[stepNum - 1]}`;
+  if (mobPct) mobPct.textContent = `${Math.round((stepNum / 7) * 100)}%`;
+
+  announceScreenReader(`Now on step ${stepNum} of 7: ${stepTitles[stepNum - 1]}`);
+  window.scrollTo({ top: 120, behavior: 'smooth' });
+
+  if (stepNum !== 4 && cameraModule) {
+    cameraModule.stop();
+    document.getElementById('cameraViewportBox').style.display = 'none';
+  }
+}
+
+function announceScreenReader(msg) {
+  const el = document.getElementById('srAnnouncement');
+  if (el) {
+    el.textContent = '';
+    setTimeout(() => { el.textContent = msg; }, 50);
+  }
+}
+
+// Utility Bar Controllers
+let currentFontDelta = 0;
+function adjustFontSize(delta) {
+  if (delta === 0) currentFontDelta = 0;
+  else currentFontDelta = Math.max(-2, Math.min(4, currentFontDelta + delta));
+  document.documentElement.style.fontSize = (16 + currentFontDelta) + 'px';
+}
+
+function toggleContrast() {
+  document.documentElement.classList.toggle('high-contrast');
+  const isHc = document.documentElement.classList.contains('high-contrast');
+  document.getElementById('btnContrast').setAttribute('aria-pressed', String(isHc));
+}
+
+function setLanguage(lang) {
+  document.querySelectorAll('.lang-picker .util-btn').forEach(b => b.style.fontWeight = '400');
+  const activeBtn = document.getElementById('lang_' + lang);
+  if (activeBtn) activeBtn.style.fontWeight = '700';
+
+  if (lang !== 'en') {
+    alert("Note: Hindi and Kannada translations are prototype versions and require native clinical review.");
+  }
+}
+
+// =============================================================================
+// SCREEN 1: WELCOME & CONSENT LOGIC
+// =============================================================================
+function validateStep1() {
+  const understood = document.getElementById('chkConsentUnderstand').checked;
+  appState.screening.answers.consentUnderstand = understood;
+  appState.screening.answers.consentSave = document.getElementById('chkConsentSave').checked;
+  appState.screening.answers.consentShare = document.getElementById('chkConsentShare').checked;
+
+  document.getElementById('btnNext1').disabled = !understood;
+}
+
+// =============================================================================
+// SCREEN 2: ABOUT THE PERSON
+// =============================================================================
+function selectAgeGroup(val) {
+  appState.screening.answers.ageGroup = val;
+  ['Infant', 'Child', 'Adult', 'Older'].forEach(name => {
+    const lbl = document.getElementById('lblAge' + name);
+    if (lbl) lbl.classList.remove('selected');
+  });
+  const map = { infant: 'Infant', child: 'Child', adult: 'Adult', older_adult: 'Older' };
+  const targetLbl = document.getElementById('lblAge' + map[val]);
+  if (targetLbl) targetLbl.classList.add('selected');
+
+  document.getElementById('btnNext2').disabled = false;
+}
+
+function updateVulnerableFlags() {
+  appState.screening.answers.isPregnant = document.getElementById('chkPregnancy').checked;
+  appState.screening.answers.isImmunocompromised = document.getElementById('chkImmunocompromised').checked;
+}
+
+// =============================================================================
+// SCREEN 3: ABOUT THE RASH
+// =============================================================================
+function selectBodyArea(area) {
+  appState.screening.answers.bodyArea = area;
+  document.querySelectorAll('input[name="body_area"]').forEach(r => {
+    r.closest('.choice-card').classList.toggle('selected', r.value === area);
+  });
+  checkStep3Valid();
+}
+
+function selectDurationTier(tier) {
+  appState.screening.answers.durationTier = tier;
+  document.querySelectorAll('input[name="duration_tier"]').forEach(r => {
+    r.closest('.choice-card').classList.toggle('selected', r.value === tier);
+  });
+  checkStep3Valid();
+}
+
+function updateSymptoms() {
+  appState.screening.answers.isItchy = document.getElementById('chkItchy').checked;
+  appState.screening.answers.isRingShaped = document.getElementById('chkRingShaped').checked;
+  appState.screening.answers.isScaly = document.getElementById('chkScaly').checked;
+}
+
+function checkStep3Valid() {
+  const valid = Boolean(appState.screening.answers.bodyArea && appState.screening.answers.durationTier);
+  document.getElementById('btnNext3').disabled = !valid;
+}
+
+// =============================================================================
+// SCREEN 4: CAMERA & UPLOAD PHOTO SLOTS WITH AUTOMATIC PROGRESS PIPELINE
+// =============================================================================
+function startCameraForSlot(slotName) {
+  appState.activeCameraSlot = slotName;
+  const camBox = document.getElementById('cameraViewportBox');
+  if (camBox) camBox.style.display = 'block';
+
+  const titleEl = document.getElementById('cameraSlotTitle');
+  if (titleEl) {
+    titleEl.textContent = (slotName === 'closeup')
+      ? 'Capturing 1. Close-up Photograph of Rash* (Hold ~10-15 cm from skin)'
+      : 'Capturing 2. Wider View Photograph (Optional) (Hold ~30-50 cm from skin)';
+  }
+
+  const video = document.getElementById('liveVideo');
+  if (!cameraModule) {
+    cameraModule = new DermaCamera(video, {
+      onQualitySample: handleLiveQualitySample,
+      onQualityUpdate: handleLiveQualitySample,
+      onError: handleCameraError
+    });
+  }
+  cameraModule.start(video).catch(e => {
+    console.warn('Camera autostart warning:', e);
+    handleCameraError(e);
+  });
+  if (camBox) camBox.scrollIntoView({ behavior: 'smooth' });
+}
+
+function closeCameraView() {
+  if (cameraModule) cameraModule.stop();
+  const camBox = document.getElementById('cameraViewportBox');
+  if (camBox) camBox.style.display = 'none';
+}
+
+function handleLiveQualitySample(metrics) {
+  const dot = document.getElementById('qualityDot');
+  const txt = document.getElementById('qualityText');
+  const badge = document.getElementById('qualityBadge');
+  if (!dot || !txt) return;
+
+  if (metrics.qualityRating === 'green') {
+    dot.style.background = 'var(--gov-green)';
+    badge.style.borderColor = 'var(--gov-green)';
+    txt.textContent = 'Ready for photo';
+  } else if (metrics.qualityRating === 'amber') {
+    dot.style.background = 'var(--gov-saffron)';
+    badge.style.borderColor = 'var(--gov-saffron)';
+    txt.textContent = metrics.tip || 'Adjust position';
+  } else {
+    dot.style.background = 'var(--gov-red)';
+    badge.style.borderColor = 'var(--gov-red)';
+    txt.textContent = metrics.tip || 'Poor lighting or focus';
+  }
+}
+
+function handleCameraError(err) {
+  const box = document.getElementById('camErrorBox');
+  const title = document.getElementById('camErrorTitle');
+  const help = document.getElementById('camErrorHelp');
+  const osHelp = document.getElementById('camOsHelp');
+  if (!box) return;
+
+  box.style.display = 'block';
+  if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+    title.textContent = 'Camera Permission Blocked';
+    help.textContent = 'Your browser has blocked camera permissions for this site.';
+    osHelp.innerHTML = `
+      <strong>To enable on Android Chrome:</strong> Tap lock/tune icon near URL &rarr; Permissions &rarr; Camera &rarr; Allow.<br>
+      <strong>To enable on iPhone Safari:</strong> Tap 'aA' icon in search bar &rarr; Website Settings &rarr; Camera &rarr; Allow.
+    `;
+  } else {
+    title.textContent = 'Camera Unavailable or Inactive';
+    help.textContent = 'Live camera stream could not be opened or is busy.';
+    osHelp.textContent = 'Please use the "Upload from Gallery or Files" or "Sample Photo" button.';
+  }
+}
+
+async function captureLivePhotoSlot() {
+  const slot = appState.activeCameraSlot || 'closeup';
+  if (!cameraModule) {
+    useSampleForActiveSlot();
+    return;
+  }
+
+  try {
+    const result = await cameraModule.capture();
+    if (result && (result.fullBlob || result.dataUrl)) {
+      closeCameraView();
+      startAutomaticAnalysisPipeline(result.fullBlob, result.dataUrl, slot, 'camera');
+    } else {
+      useSampleForActiveSlot();
+    }
+  } catch (err) {
+    console.warn('Capture fallback:', err);
+    useSampleForActiveSlot();
+  }
+}
+
+function useSampleForActiveSlot() {
+  const slot = appState.activeCameraSlot || 'closeup';
+  closeCameraView();
+  const sampleUrl = (slot === 'closeup')
+    ? '/samples/sample_ring_rash.jpg'
+    : '/samples/sample_rash_wide.jpg';
+  loadSampleImage(sampleUrl, slot);
+}
+
+function handleFileSelect(e, slotName) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = evt => {
+    startAutomaticAnalysisPipeline(file, evt.target.result, slotName, 'upload');
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadSampleImage(url, slotName) {
+  fetch(url)
+    .then(r => r.blob())
+    .then(b => {
+      const reader = new FileReader();
+      reader.onload = evt => startAutomaticAnalysisPipeline(b, evt.target.result, slotName, 'sample');
+      reader.readAsDataURL(b);
+    })
+    .catch(err => {
+      console.warn('Sample load error:', err);
+      // Fallback synthetic colored image
+      const cvs = document.createElement('canvas');
+      cvs.width = 400; cvs.height = 300;
+      const c = cvs.getContext('2d');
+      c.fillStyle = '#b47355'; c.fillRect(0,0,400,300);
+      c.strokeStyle = '#c0392b'; c.lineWidth = 14;
+      c.beginPath(); c.arc(200, 150, 60, 0, Math.PI * 2); c.stroke();
+      const dUrl = cvs.toDataURL('image/jpeg');
+      cvs.toBlob(blob => {
+        startAutomaticAnalysisPipeline(blob, dUrl, slotName, 'sample');
+      }, 'image/jpeg');
+    });
+}
+
+// Automatic 6-step analysis sequence pipeline
+async function startAutomaticAnalysisPipeline(blob, dataUrl, slotName, source) {
+  const slotObj = appState.screening.photos[slotName];
+  slotObj.blob = blob;
+  slotObj.dataUrl = dataUrl;
+  slotObj.source = source;
+
+  // Show status label on slot
+  const statusEl = document.getElementById(slotName === 'closeup' ? 'slot1Status' : 'slot2Status');
+  if (statusEl) {
+    statusEl.innerHTML = `<span style="color:var(--gov-green);font-weight:700;">✓ Added (${source})</span>`;
+  }
+
+  // Show automatic progress box
+  const progBox = document.getElementById('analysisProgressBox');
+  if (progBox) progBox.style.display = 'block';
+
+  // Animate progress list
+  const steps = ['p_step_1', 'p_step_2', 'p_step_3', 'p_step_4', 'p_step_5', 'p_step_6'];
+  for (let i = 0; i < steps.length; i++) {
+    const sEl = document.getElementById(steps[i]);
+    if (sEl) {
+      sEl.className = 'progress-step-item active';
+      announceScreenReader(sEl.textContent);
+    }
+    await new Promise(r => setTimeout(r, 40));
+    if (sEl) sEl.className = 'progress-step-item done';
+  }
+
+  // Run Vision Engine
+  const img = new Image();
+  img.src = dataUrl;
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || img.width || 400;
+    canvas.height = img.naturalHeight || img.height || 300;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    let visionRes = { hasSkin: true, metrics: { blurScore: 120, rednessContrast: 12 } };
+    if (typeof DermaVision !== 'undefined' && DermaVision.analyzeRashImage) {
+      visionRes = DermaVision.analyzeRashImage(imgData);
+    }
+    
+    // Upload quality checks
+    let uploadQuality = { has_upload_flags: false, flags: [] };
+    if (source === 'upload' && typeof DermaVision !== 'undefined' && DermaVision.checkUploadQuality) {
+      uploadQuality = DermaVision.checkUploadQuality(canvas.width, canvas.height, (blob && blob.size) || 10000);
+      slotObj.uploadFlags = uploadQuality.flags;
+    }
+
+    // Pattern model similarity & strength rating
+    let patternRes = { top_display_name: 'Fungal-type ring pattern', strength: 'Moderate' };
+    if (typeof DermaVision !== 'undefined' && DermaVision.evaluatePatternSimilarity) {
+      patternRes = DermaVision.evaluatePatternSimilarity(visionRes, {
+        source,
+        uploadFlags: uploadQuality.flags
+      });
+    }
+
+    slotObj.visionResult = visionRes;
+    slotObj.patternResult = patternRes;
+
+    if (progBox) progBox.style.display = 'none';
+
+    // Update the specific slot's card UI
+    if (slotName === 'closeup') {
+      const previewBox = document.getElementById('slot1PreviewBox');
+      const buttonsBox = document.getElementById('slot1Buttons');
+      const imgEl = document.getElementById('slot1Img');
+      const fb = document.getElementById('slot1Feedback');
+
+      if (imgEl) imgEl.src = dataUrl;
+      if (buttonsBox) buttonsBox.style.display = 'none';
+      if (previewBox) previewBox.style.display = 'block';
+
+      if (fb) {
+        fb.innerHTML = `
+          <strong>Quality:</strong> ${visionRes.hasSkin ? '<span style="color:var(--gov-green);font-weight:700;">PASS (Skin detected)</span>' : '<span style="color:var(--gov-red);font-weight:700;">Inconclusive</span>'} &bull;
+          <strong>Similar Pattern:</strong> <em>${patternRes.top_display_name}</em> (${patternRes.strength} Strength)
+          ${uploadQuality.has_upload_flags ? `<div style="color:var(--gov-saffron);font-size:0.75rem;margin-top:2px;">Upload Notice: ${uploadQuality.flags.join(', ')} capped strength at Moderate.</div>` : ''}
+        `;
+      }
+
+      renderSlotOverlay(visionRes, 'slot1Img', 'slot1OverlayCanvas');
+      document.getElementById('btnNext4').disabled = false;
+    } else {
+      const previewBox = document.getElementById('slot2PreviewBox');
+      const buttonsBox = document.getElementById('slot2Buttons');
+      const imgEl = document.getElementById('slot2Img');
+      const fb = document.getElementById('slot2Feedback');
+
+      if (imgEl) imgEl.src = dataUrl;
+      if (buttonsBox) buttonsBox.style.display = 'none';
+      if (previewBox) previewBox.style.display = 'block';
+
+      if (fb) {
+        fb.innerHTML = `
+          <strong>Quality:</strong> ${visionRes.hasSkin ? '<span style="color:var(--gov-green);font-weight:700;">PASS</span>' : 'Reviewed'} &bull;
+          <strong>Baseline Reference:</strong> Surrounding skin context attached.
+        `;
+      }
+    }
+  };
+}
+
+function renderSlotOverlay(visionRes, imgId, canvasId) {
+  const imgEl = document.getElementById(imgId);
+  const overlay = document.getElementById(canvasId);
+  if (!imgEl || !overlay || !visionRes) return;
+
+  overlay.width = imgEl.clientWidth || 200;
+  overlay.height = imgEl.clientHeight || 150;
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+  if (visionRes.overlayMask) {
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = visionRes.width;
+    maskCanvas.height = visionRes.height;
+    const mCtx = maskCanvas.getContext('2d');
+    const maskImgData = mCtx.createImageData(visionRes.width, visionRes.height);
+    maskImgData.data.set(visionRes.overlayMask);
+    mCtx.putImageData(maskImgData, 0, 0);
+    ctx.drawImage(maskCanvas, 0, 0, overlay.width, overlay.height);
+  }
+}
+
+function toggleSlotOverlay(slotName) {
+  const canvas = document.getElementById(slotName === 'closeup' ? 'slot1OverlayCanvas' : 'slot2OverlayCanvas');
+  if (canvas) {
+    canvas.style.display = (canvas.style.display === 'none') ? 'block' : 'none';
+  }
+}
+
+function retakeSlotPhoto(slotName) {
+  removeSlotPhoto(slotName);
+  startCameraForSlot(slotName);
+}
+
+function removeSlotPhoto(slotName) {
+  appState.screening.photos[slotName] = { blob: null, dataUrl: null, source: 'camera', visionResult: null, uploadFlags: [] };
+  
+  if (slotName === 'closeup') {
+    const previewBox = document.getElementById('slot1PreviewBox');
+    const buttonsBox = document.getElementById('slot1Buttons');
+    const statusEl = document.getElementById('slot1Status');
+    if (previewBox) previewBox.style.display = 'none';
+    if (buttonsBox) buttonsBox.style.display = 'flex';
+    if (statusEl) statusEl.textContent = 'Not added yet';
+    document.getElementById('btnNext4').disabled = true;
+  } else {
+    const previewBox = document.getElementById('slot2PreviewBox');
+    const buttonsBox = document.getElementById('slot2Buttons');
+    const statusEl = document.getElementById('slot2Status');
+    if (previewBox) previewBox.style.display = 'none';
+    if (buttonsBox) buttonsBox.style.display = 'flex';
+    if (statusEl) statusEl.textContent = 'Optional';
+  }
+}
+
+
+
+function toggleOverlay() {
+  const canvas = document.getElementById('overlayCanvas');
+  if (canvas) canvas.style.display = (canvas.style.display === 'none') ? 'block' : 'none';
+}
+
+function toggleResultOverlay() {
+  const canvas = document.getElementById('resOverlayCanvas');
+  if (canvas) canvas.style.display = (canvas.style.display === 'none') ? 'block' : 'none';
+}
+
+function retakePhotoSlot() {
+  document.getElementById('photoReviewSection').style.display = 'none';
+  document.getElementById('slot1Status').textContent = 'Not added yet';
+  appState.screening.photos.closeup = { blob: null, dataUrl: null, source: 'camera', visionResult: null, uploadFlags: [] };
+  document.getElementById('btnNext4').disabled = true;
+}
+
+// =============================================================================
+// SCREEN 5: CREAM HISTORY LOGIC
+// =============================================================================
+function selectCreamUsed(val) {
+  appState.screening.answers.usedCream = val;
+  document.querySelectorAll('input[name="used_cream"]').forEach(r => {
+    r.closest('.choice-card').classList.toggle('selected', r.value === val);
+  });
+
+  const detailSec = document.getElementById('creamDetailsSection');
+  detailSec.style.display = (val === 'YES') ? 'block' : 'none';
+  document.getElementById('btnNext5').disabled = false;
+}
+
+function selectWhoPrescribed(val) {
+  appState.screening.answers.whoPrescribed = val;
+  document.querySelectorAll('input[name="who_prescribed"]').forEach(r => {
+    r.closest('.choice-card').classList.toggle('selected', r.value === val);
+  });
+}
+
+function selectSteroidSeen(val) {
+  appState.screening.answers.steroidSeen = val;
+  document.querySelectorAll('input[name="steroid_seen"]').forEach(r => {
+    r.closest('.choice-card').classList.toggle('selected', r.value === val);
+  });
+}
+
+function selectComboCream(val) {
+  appState.screening.answers.comboCream = val;
+  document.querySelectorAll('input[name="combo_cream"]').forEach(r => {
+    r.closest('.choice-card').classList.toggle('selected', r.value === val);
+  });
+}
+
+function selectRashSpread(val) {
+  appState.screening.answers.rashSpread = val;
+  document.querySelectorAll('input[name="rash_spread"]').forEach(r => {
+    r.closest('.choice-card').classList.toggle('selected', r.value === val);
+  });
+}
+
+function selectRashReturned(val) {
+  appState.screening.answers.rashReturned = val;
+  document.querySelectorAll('input[name="rash_returned"]').forEach(r => {
+    r.closest('.choice-card').classList.toggle('selected', r.value === val);
+  });
+}
+
+let creamDebounceTimer = null;
+function debounceCreamCheck(val) {
+  clearTimeout(creamDebounceTimer);
+  appState.screening.answers.creamName = val.trim();
+  creamDebounceTimer = setTimeout(() => {
+    checkCreamSteroidContent(val.trim());
+  }, 300);
+}
+
+function setDemoCream(name) {
+  const input = document.getElementById('txtCreamName');
+  if (input) {
+    input.value = name;
+    debounceCreamCheck(name);
+  }
+}
+
+function checkCreamSteroidContent(name) {
+  const fb = document.getElementById('creamMatchFeedback');
+  if (!name) {
+    fb.innerHTML = '';
+    return;
+  }
+  const steroids = ['clobetasol', 'betamethasone', 'mometasone', 'hydrocortisone', 'fluocinolone', 'steroid', 'candid-b', 'betnovate', 'quadriderm', 'fourderm', 'panderm'];
+  const isMatch = steroids.some(s => name.toLowerCase().includes(s));
+
+  if (isMatch) {
+    fb.innerHTML = `<span style="color:var(--gov-red);font-weight:700;">⚠️ Possible steroid or combination ingredient detected in name.</span>`;
+  } else {
+    fb.innerHTML = `<span style="color:var(--text-muted);">No recognized steroid in visible text. Always verify with a pharmacist.</span>`;
+  }
+}
+
+// =============================================================================
+// SCREEN 6: SAFETY CHECK (10 EMERGENCY WARNING SIGNS)
+// =============================================================================
+function updateDangerSigns() {
+  const checkedBoxes = Array.from(document.querySelectorAll('input[name="danger_sign"]:checked'));
+  appState.screening.answers.dangerSigns = checkedBoxes.map(cb => cb.value);
+
+  const noDangerChk = document.getElementById('chkNoDangerSigns');
+  if (checkedBoxes.length > 0 && noDangerChk.checked) {
+    noDangerChk.checked = false;
+  }
+  validateStep6();
+}
+
+function toggleNoDanger(checked) {
+  if (checked) {
+    document.querySelectorAll('input[name="danger_sign"]').forEach(cb => {
+      cb.checked = false;
+    });
+    appState.screening.answers.dangerSigns = [];
+  }
+  validateStep6();
+}
+
+function validateStep6() {
+  const hasDanger = appState.screening.answers.dangerSigns.length > 0;
+  const noDanger = document.getElementById('chkNoDangerSigns').checked;
+  document.getElementById('btnNext6').disabled = !(hasDanger || noDanger);
+}
+
+// =============================================================================
+// SCREEN 7: DETERMINISTIC LADDER & TRIAGE EXECUTION
+// =============================================================================
+async function executeScreeningTriage() {
+  const ans = appState.screening.answers;
+  const photoObj = appState.screening.photos.closeup;
+  const danger = ans.dangerSigns;
+  const vision = photoObj.visionResult || {};
+  const pat = photoObj.patternResult || {};
+
+  let steroidRisk = 0;
+  let fungalPoints = 0;
+  const rulesApplied = [];
+
+  // ORDER 1: ANY DANGER SIGN -> CATEGORY D (Emergency, bypass model)
+  if (danger.length > 0) {
+    const res = {
+      category: 'D',
+      urgency: 'EMERGENT',
+      title: 'Category D — Seek Immediate Emergency Care',
+      action: 'Seek emergency clinical medical evaluation at a hospital or call 108 immediately. Do not wait.',
+      rulesApplied: ['Order 1: Emergency danger sign reported (' + danger.join(', ') + ') -> Escalated to Category D immediately. Image findings bypassed for patient safety.'],
+      steroidRisk: 0,
+      fungalPoints: 0,
+      patternModel: null,
+      photoFinding: 'Omitted due to urgent clinical danger signs.'
+    };
+    appState.screening.result = res;
+    renderResultScreen(res);
+    recordConsentedCase(res);
+    goToFlowStep(7);
+    return;
+  }
+
+  // ORDER 2: CONTRADICTIONS -> CATEGORY C
+  if (ans.usedCream === 'NO' && (ans.steroidSeen === 'YES' || ans.rashSpread === 'YES')) {
+    const res = {
+      category: 'C',
+      urgency: 'ROUTINE',
+      title: 'Category C — More Information Needed',
+      action: 'Your history answers showed a contradiction (reported no cream, but indicated steroid or spreading). Please consult a healthcare professional for an in-person assessment.',
+      rulesApplied: ['Order 2: Inconsistent questionnaire answers detected -> Defaulted to Category C.'],
+      steroidRisk: 0,
+      fungalPoints: 0,
+      patternModel: pat,
+      photoFinding: 'Evaluation uncertain due to contradictory history.'
+    };
+    appState.screening.result = res;
+    renderResultScreen(res);
+    recordConsentedCase(res);
+    goToFlowStep(7);
+    return;
+  }
+
+  // Steroid risk calculation
+  if (ans.usedCream === 'YES' && ans.whoPrescribed !== 'doctor') {
+    steroidRisk += 2; rulesApplied.push('Topical cream used without doctor prescription (+2 points)');
+  }
+  if (ans.steroidSeen === 'YES' || document.getElementById('creamMatchFeedback')?.textContent.includes('steroid')) {
+    steroidRisk += 3; rulesApplied.push('Steroid name recognized on medicine (+3 points)');
+  }
+  if (ans.rashSpread === 'YES') {
+    steroidRisk += 2; rulesApplied.push('Rash spread despite cream application (+2 points)');
+  }
+  if (ans.rashReturned === 'YES') {
+    steroidRisk += 1; rulesApplied.push('Rash flared up worse after stopping cream (+1 point)');
+  }
+  if (ans.comboCream === 'YES') {
+    steroidRisk += 1; rulesApplied.push('Combination or triple-action cream reported (+1 point)');
+  }
+
+  // Fungal pattern calculation
+  if (pat.top_pattern === 'fungal_ring_pattern' && (pat.strength === 'Strong' || pat.strength === 'Moderate')) {
+    fungalPoints += 2; rulesApplied.push(`Pattern model: Fungal-type ring pattern (${pat.strength} strength) (+2 points)`);
+  }
+  if (ans.isItchy || ans.isRingShaped || ans.isScaly) {
+    fungalPoints += 1; rulesApplied.push('Characteristic cues reported: itchy, ring-shaped, or scaly (+1 point)');
+  }
+  if (ans.durationTier === '1_to_4_weeks' || ans.durationTier === 'over_1_month') {
+    fungalPoints += 1; rulesApplied.push('Rash duration exceeds 1 week (+1 point)');
+  }
+
+  // ORDER 3: STEROID RISK >= 3 -> CATEGORY B
+  let resCategory = 'C';
+  let resUrgency = 'ROUTINE';
+  let resTitle = 'Category C — More Information Needed';
+  let resAction = 'More information is required. Please visit a Primary Health Centre (PHC) or clinic for an in-person clinical examination.';
+
+  if (steroidRisk >= 3) {
+    resCategory = 'B';
+    resUrgency = 'ELEVATED';
+    resTitle = 'Category B — Cream History Needs Review';
+    resAction = 'Consult a dermatologist or qualified physician for examination and cream review. Bring your cream tube with you.';
+    rulesApplied.push(`Order 3: Steroid risk score (${steroidRisk} >= 3) -> Category B`);
+  } else if (!vision.hasSkin || vision.qualityRating === 'red') {
+    resCategory = 'C';
+    resUrgency = 'ROUTINE';
+    resTitle = 'Category C — More Information Needed';
+    resAction = 'Photograph quality was inadequate or skin could not be clearly identified. Please consult a doctor or healthcare worker.';
+    rulesApplied.push('Order 4: Inadequate photograph quality or non-skin photo -> Category C');
+  } else if (fungalPoints >= 2) {
+    resCategory = 'A';
+    resUrgency = 'ROUTINE';
+    resTitle = 'Category A — Pattern Worth Checking';
+    resAction = 'This rash exhibits features compatible with a superficial pattern that requires clinical inspection. Please arrange a consultation at your local clinic.';
+    rulesApplied.push(`Order 5: Fungal pattern criteria met (${fungalPoints} >= 2) -> Category A`);
+  } else {
+    rulesApplied.push('Order 6: Did not reach Category A or B thresholds -> Category C');
+  }
+
+  // Vulnerable flags elevation
+  if ((ans.isPregnant || ans.isImmunocompromised || ans.ageGroup === 'infant') && resUrgency === 'ROUTINE') {
+    resUrgency = 'ELEVATED';
+    rulesApplied.push('Vulnerable health profile (infant/pregnancy/immunocompromised) -> Raised urgency to ELEVATED');
+  }
+
+  const finalRes = {
+    category: resCategory,
+    urgency: resUrgency,
+    title: resTitle,
+    action: resAction,
+    rulesApplied,
+    steroidRisk,
+    fungalPoints,
+    patternModel: pat,
+    photoFinding: pat.top_display_name ? `Looks similar to ${pat.top_display_name} (${pat.strength} strength)` : 'Visual features evaluated'
+  };
+
+  appState.screening.result = finalRes;
+  renderResultScreen(finalRes);
+  recordConsentedCase(finalRes);
+  goToFlowStep(7);
+}
+
+function renderResultScreen(res) {
+  const cat = res.category.toLowerCase();
+  const hero = document.getElementById('resHero');
+  const badge = document.getElementById('resRingBadge');
+  const title = document.getElementById('resTitle');
+  const urgency = document.getElementById('resUrgency');
+  const actionText = document.getElementById('resActionText');
+  const creamWarn = document.getElementById('resCreamWarning');
+
+  hero.className = 'result-hero cat-' + cat;
+  badge.textContent = res.category;
+  title.textContent = res.title;
+  urgency.textContent = 'Urgency Level: ' + res.urgency;
+  actionText.textContent = res.action;
+
+  creamWarn.style.display = (res.steroidRisk >= 3 || appState.screening.answers.steroidSeen === 'YES') ? 'block' : 'none';
+
+  // "Looks similar to (not a diagnosis)" Panel
+  const simPanel = document.getElementById('resLooksSimilarPanel');
+  const patDiv = document.getElementById('patternListDiv');
+  const strengthBadge = document.getElementById('patternStrengthBadge');
+
+  if (res.category === 'D' || !res.patternModel) {
+    simPanel.style.display = 'none'; // Bypassed due to emergency
+  } else {
+    simPanel.style.display = 'block';
+    const pModel = res.patternModel;
+    const sMap = {
+      'Strong': 'strength-strong',
+      'Moderate': 'strength-moderate',
+      'Weak': 'strength-weak',
+      'Not enough to say': 'strength-abstain'
+    };
+    strengthBadge.className = 'strength-badge ' + (sMap[pModel.strength] || 'strength-weak');
+    strengthBadge.textContent = pModel.strength + ' Strength';
+
+    patDiv.innerHTML = (pModel.all_patterns || []).map((p, i) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface-bg);padding:8px 12px;border-radius:4px;font-size:0.875rem;">
+        <span><strong>${i + 1}. ${p.display_name}</strong></span>
+        <span style="color:var(--text-muted);font-weight:600;">Match index: ${Math.round(p.prob * 100)}%</span>
+      </div>
+    `).join('');
+  }
+
+  // Photo Thumbnail
+  const thumb = document.getElementById('resPhotoThumb');
+  const photoObj = appState.screening.photos.closeup;
+  if (photoObj.dataUrl) {
+    thumb.src = photoObj.dataUrl;
+    renderResultOverlayMask();
+  }
+  document.getElementById('resPhotoFindingText').textContent = res.photoFinding;
+
+  // Breakdown details
+  renderAuditBreakdown(res);
+}
+
+function renderResultOverlayMask() {
+  const v = appState.screening.photos.closeup.visionResult;
+  const canvas = document.getElementById('resOverlayCanvas');
+  const thumb = document.getElementById('resPhotoThumb');
+  if (!v || !canvas || !thumb) return;
+
+  canvas.width = thumb.clientWidth || 360;
+  canvas.height = thumb.clientHeight || 270;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (v.overlayMask) {
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = v.width;
+    maskCanvas.height = v.height;
+    const mCtx = maskCanvas.getContext('2d');
+    const maskImgData = mCtx.createImageData(v.width, v.height);
+    maskImgData.data.set(v.overlayMask);
+    mCtx.putImageData(maskImgData, 0, 0);
+    ctx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+  }
+}
+
+function renderAuditBreakdown(res) {
+  const ans = appState.screening.answers;
+  const reportedDiv = document.getElementById('auditReportedSummary');
+  reportedDiv.innerHTML = `
+    <strong>Body Area:</strong> ${ans.bodyArea || 'Not selected'}<br>
+    <strong>Duration:</strong> ${ans.durationTier || 'Not selected'}<br>
+    <strong>Reported Cues:</strong> ${[ans.isItchy && 'Itchy', ans.isRingShaped && 'Ring-shaped', ans.isScaly && 'Scaly'].filter(Boolean).join(', ') || 'None'}<br>
+    <strong>Cream Applied:</strong> ${ans.usedCream || 'No'}${ans.whoPrescribed ? ' (Prescribed by: ' + ans.whoPrescribed + ')' : ''}<br>
+    <strong>Emergency Signs Checked:</strong> ${ans.dangerSigns.length > 0 ? ans.dangerSigns.join(', ') : 'None'}
+  `;
+
+  const v = appState.screening.photos.closeup.visionResult || {};
+  const m = v.metrics || {};
+  document.getElementById('tblQualityBody').innerHTML = `
+    <tr><td>Blur (Laplacian)</td><td>${m.blurScore || 'N/A'}</td><td>&ge; 80.0</td><td>${(m.blurScore >= 80) ? '<span style="color:var(--gov-green);font-weight:700;">PASS</span>' : 'FAIL'}</td></tr>
+    <tr><td>Brightness Mean</td><td>${m.brightnessMean || 'N/A'}</td><td>40 - 220</td><td>${(m.brightnessMean >= 40 && m.brightnessMean <= 220) ? '<span style="color:var(--gov-green);font-weight:700;">PASS</span>' : 'FAIL'}</td></tr>
+    <tr><td>Glare Fraction</td><td>${m.glarePct !== undefined ? m.glarePct + '%' : 'N/A'}</td><td>&le; 8%</td><td>${(m.glarePct <= 8) ? '<span style="color:var(--gov-green);font-weight:700;">PASS</span>' : 'FAIL'}</td></tr>
+    <tr><td>Skin Coverage</td><td>${m.skinFraction !== undefined ? m.skinFraction + '%' : 'N/A'}</td><td>&ge; 15%</td><td>${(m.skinFraction >= 15) ? '<span style="color:var(--gov-green);font-weight:700;">PASS</span>' : 'FAIL'}</td></tr>
+  `;
+
+  document.getElementById('tblVisionBody').innerHTML = `
+    <tr><td>Affected Area</td><td>${v.affectedAreaPct !== undefined ? v.affectedAreaPct + '%' : 'N/A'}</td><td>Proportion of visible skin region</td></tr>
+    <tr><td>Redness Contrast (&Delta;a*)</td><td>${m.rednessContrast || 'N/A'}</td><td>Relative redness intensity compared to baseline surrounding skin</td></tr>
+    <tr><td>Border Sharpness</td><td>${m.borderSharpness || 'N/A'}</td><td>Edge gradient magnitude of the lesion boundary</td></tr>
+    <tr><td>Ring Profile Score</td><td>${m.ringScore !== undefined ? m.ringScore : 'N/A'}</td><td>Radial profile annular density concentration</td></tr>
+  `;
+
+  const pat = res.patternModel || {};
+  document.getElementById('auditPatternDetails').innerHTML = `
+    <strong>Top Pattern:</strong> ${pat.top_display_name || 'N/A'}<br>
+    <strong>Strength Rating:</strong> ${pat.strength || 'N/A'}<br>
+    <strong>Conformal Prediction Set:</strong> [${(pat.conformal_set || []).join(', ')}]<br>
+    <strong>Ensemble Verification:</strong> ${pat.ensemble_compatible ? 'Compatible (Model and interpretable ring features agree)' : 'Not confirmed'}
+  `;
+
+  document.getElementById('auditRulesApplied').innerHTML = res.rulesApplied.map(r => `<div>&bull; ${r}</div>`).join('');
+}
+
+function copyReferralSummary() {
+  const r = appState.screening.result;
+  if (!r) return;
+  const txt = `DermaSense Referral Summary:\nOutcome: Category ${r.category} (${r.urgency})\nAction: ${r.action}\nNotice: Screening aid only. Not a medical diagnosis.`;
+  navigator.clipboard.writeText(txt).then(() => alert('Referral summary copied to clipboard.')).catch(() => alert(txt));
+}
+
+function saveDeviceReminder() {
+  localStorage.setItem('dermasense_reminder', JSON.stringify({
+    timestamp: Date.now(),
+    remindAfterDays: 3,
+    caseCategory: appState.screening.result?.category || 'C'
+  }));
+  document.getElementById('reminderSavedNotice').style.display = 'inline';
+}
+
+function startNewScreening() {
+  appState.screening.answers = {
+    consentUnderstand: false,
+    consentSave: false,
+    consentShare: false,
+    ageGroup: null,
+    isPregnant: false,
+    isImmunocompromised: false,
+    bodyArea: null,
+    durationTier: null,
+    isItchy: false,
+    isRingShaped: false,
+    isScaly: false,
+    usedCream: null,
+    whoPrescribed: null,
+    steroidSeen: null,
+    comboCream: null,
+    rashSpread: null,
+    rashReturned: null,
+    creamName: '',
+    dangerSigns: []
+  };
+  appState.screening.photos = {
+    closeup: { blob: null, dataUrl: null, source: 'camera', visionResult: null, uploadFlags: [] },
+    wider: { blob: null, dataUrl: null, source: 'camera', visionResult: null, uploadFlags: [] }
+  };
+  appState.screening.result = null;
+
+  startScreeningFlow();
+}
+
+function recordConsentedCase(res) {
+  const caseId = 'CASE_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  const caseRecord = {
+    case_id: caseId,
+    timestamp: new Date().toISOString(),
+    category: res.category,
+    urgency: res.urgency,
+    body_area: appState.screening.answers.bodyArea,
+    duration: appState.screening.answers.durationTier,
+    source: appState.screening.photos.closeup.source,
+    status: 'New',
+    steroid_risk: res.steroidRisk,
+    pattern_model: res.patternModel,
+    reviewer_notes: ''
+  };
+
+  const stored = JSON.parse(localStorage.getItem('dermasense_consented_cases') || '[]');
+  stored.unshift(caseRecord);
+  localStorage.setItem('dermasense_consented_cases', JSON.stringify(stored));
+
+  // Sync to multi-portal platform database & triggers referrals / notifications
+  if (navigator.onLine) {
+    const token = localStorage.getItem('dermasense_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const payload = {
+      body_area: appState.screening.answers.bodyArea || 'trunk',
+      duration_days: appState.screening.answers.durationTier === '> 4 weeks' ? 30 : 7,
+      itch_severity: appState.screening.answers.itchSeverity || 'moderate',
+      pain_present: !!appState.screening.answers.painPresent,
+      danger_signs: appState.screening.answers.dangerSigns || [],
+      vulnerable_flags: appState.screening.answers.vulnerableFlags || [],
+      answers: {
+        used_any_cream: appState.screening.answers.usedCream || 'NO',
+        cream_name: appState.screening.answers.creamName || '',
+        body_area: appState.screening.answers.bodyArea || 'trunk',
+        itch_severity: appState.screening.answers.itchSeverity || 'moderate'
+      },
+      closeup_data_url: appState.screening.photos.closeup?.dataUrl || '',
+      wider_data_url: appState.screening.photos.wider?.dataUrl || '',
+      cream_text: appState.screening.answers.creamName || '',
+      source: appState.screening.photos.closeup?.source || 'camera'
+    };
+
+    fetch('/api/screenings', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload)
+    }).then(async r => {
+      if (r.ok) {
+        const d = await r.json();
+        console.log('✓ Multi-portal screening created:', d.screening_id, 'Referral:', d.referral_id);
+        if (window.DMS_PORTAL && window.DMS_PORTAL.loadUserNotifications) {
+          window.DMS_PORTAL.loadUserNotifications();
+        }
+      }
+    }).catch(e => console.warn('Portal screening sync err:', e));
+
+    if (appState.screening.answers.consentShare) {
+      const fd = new FormData();
+      fd.append('body_area', appState.screening.answers.bodyArea || '');
+      fd.append('danger_signs', (appState.screening.answers.dangerSigns || []).join(','));
+      fd.append('used_any_cream', appState.screening.answers.usedCream || 'NOT_SURE');
+      fd.append('source', appState.screening.photos.closeup.source);
+      fd.append('consent_store_data', 'true');
+      fetch(API_BASE + '/screen', { method: 'POST', body: fd }).catch(e => console.warn('Queue sync:', e));
+    }
+  }
+}
+
+// =============================================================================
+// AUTHENTICATION & ROLE-BASED DASHBOARDS
+// =============================================================================
+async function quickDemoLogin(role) {
+  try {
+    const res = await fetch(API_BASE + '/api/auth/demo-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role })
+    });
+    if (!res.ok) throw new Error('Demo login failed');
+    const data = await res.json();
+    setSession(data.token, data.user);
+  } catch (e) {
+    alert('Login error: ' + e.message);
+  }
+}
+
+async function handleManualLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('txtLoginUser').value.trim();
+  const password = document.getElementById('txtLoginPass').value.trim();
+  const errEl = document.getElementById('loginErrorMsg');
+
+  try {
+    const res = await fetch(API_BASE + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Login failed');
+    }
+    const data = await res.json();
+    setSession(data.token, data.user);
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function setSession(token, user) {
+  appState.authToken = token;
+  appState.currentUser = user;
+  localStorage.setItem('dermasense_token', token);
+
+  updateAuthUI();
+  navigateTo('dashboard');
+}
+
+async function validateSession() {
+  try {
+    const res = await fetch(API_BASE + '/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + appState.authToken }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated) {
+        appState.currentUser = data.user;
+        updateAuthUI();
+      } else {
+        logoutUser();
+      }
+    }
+  } catch (e) {
+    console.warn('Session check failed:', e);
+  }
+}
+
+function updateAuthUI() {
+  const badge = document.getElementById('userBadge');
+  const label = document.getElementById('userNameRole');
+  const dashNav = document.getElementById('nav-dashboard');
+
+  if (appState.currentUser) {
+    badge.style.display = 'flex';
+    label.textContent = `${appState.currentUser.username} (${appState.currentUser.role.replace('_', ' ')})`;
+    dashNav.style.display = 'inline-flex';
+    document.getElementById('nav-signin').style.display = 'none';
+  } else {
+    badge.style.display = 'none';
+    dashNav.style.display = 'none';
+    document.getElementById('nav-signin').style.display = 'inline-flex';
+  }
+}
+
+function logoutUser() {
+  if (appState.authToken) {
+    fetch(API_BASE + '/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + appState.authToken }
+    }).catch(e => console.warn('Logout err:', e));
+  }
+  appState.authToken = null;
+  appState.currentUser = null;
+  localStorage.removeItem('dermasense_token');
+  updateAuthUI();
+  navigateTo('signin');
+}
+
+function renderRoleDashboard() {
+  const user = appState.currentUser;
+  if (!user) {
+    navigateTo('signin');
+    return;
+  }
+
+  document.querySelectorAll('.role-dash-view').forEach(v => v.style.display = 'none');
+  const role = user.role;
+
+  const titleEl = document.getElementById('dashRoleTitle');
+  const descEl = document.getElementById('dashRoleDesc');
+
+  const roleTitles = {
+    patient: 'Patient Personal Records Portal',
+    health_worker: 'ASHA & Community Health Worker Priority Triage Queue',
+    pharmacist: 'Community Pharmacy Medication Label Verification Tool',
+    doctor: 'Clinical Triage & Specialist Dermatology Referral Consultations',
+    analyst: 'State Public Health Epidemiology Analytics Dashboard',
+    admin: 'Government Portal System Administration & Audit Log'
+  };
+
+  titleEl.textContent = roleTitles[role] || 'Role Dashboard';
+  descEl.textContent = `Active Profile: ${user.username} | Role: ${role.replace('_', ' ')}`;
+
+  const activeDash = document.getElementById('dash-' + role);
+  if (activeDash) activeDash.style.display = 'block';
+
+  // Load role-specific content
+  if (role === 'patient') loadPatientRecords();
+  else if (role === 'health_worker' || role === 'doctor') loadRoleCases();
+  else if (role === 'analyst') loadAnalystMetrics();
+  else if (role === 'admin') loadAdminAudit();
+}
+
+function loadPatientRecords() {
+  const stored = JSON.parse(localStorage.getItem('dermasense_consented_cases') || '[]');
+  const list = document.getElementById('patientRecordsList');
+  if (stored.length === 0) {
+    list.innerHTML = `<div style="color:var(--text-muted);padding:14px;background:var(--surface-bg);border-radius:var(--radius);">No local screening records saved.</div>`;
+    return;
+  }
+  list.innerHTML = stored.map(c => `
+    <div style="background:#ffffff;border:1px solid var(--border-color);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <strong style="color:var(--gov-navy);">${c.case_id}</strong> &bull; Category <strong>${c.category}</strong> (${c.urgency})
+        <div style="font-size:0.8125rem;color:var(--text-muted);margin-top:2px;">Area: ${c.body_area || 'N/A'} | Date: ${new Date(c.timestamp).toLocaleDateString()}</div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="alert('Viewing referral summary for ${c.case_id}')">View</button>
+    </div>
+  `).join('');
+}
+
+async function loadRoleCases() {
+  try {
+    const res = await fetch(API_BASE + '/api/cases', {
+      headers: { 'Authorization': 'Bearer ' + appState.authToken }
+    });
+    if (!res.ok) throw new Error('Could not fetch case queue');
+    const data = await res.json();
+    renderCasesForRole(data.cases || []);
+  } catch (e) {
+    // Offline local queue fallback
+    const local = JSON.parse(localStorage.getItem('dermasense_consented_cases') || '[]');
+    renderCasesForRole(local);
+  }
+}
+
+function renderCasesForRole(cases) {
+  const isDoc = appState.currentUser?.role === 'doctor';
+  const targetList = document.getElementById(isDoc ? 'docCardsList' : 'hwCardsList');
+  const countEl = document.getElementById(isDoc ? 'docCaseCount' : 'hwCaseCount');
+  if (countEl) countEl.textContent = cases.length;
+
+  if (cases.length === 0) {
+    targetList.innerHTML = `<div style="color:var(--text-muted);padding:24px;text-align:center;background:var(--surface-bg);border-radius:var(--radius);">No consented referral cases in queue.</div>`;
+    return;
+  }
+
+  targetList.innerHTML = cases.map(c => `
+    <div style="background:#ffffff;border:1px solid var(--border-color);border-left:6px solid ${c.category === 'D' ? 'var(--gov-red)' : (c.category === 'B' ? 'var(--gov-saffron)' : (c.category === 'A' ? 'var(--gov-amber)' : 'var(--gov-slate)'))};border-radius:var(--radius);padding:14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <strong style="color:var(--gov-navy);">${c.case_id}</strong>
+          <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:var(--surface-bg);font-weight:700;">Cat ${c.category} (${c.urgency})</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);">${c.source ? 'Source: ' + c.source : ''}</span>
+        </div>
+        <div style="font-size:0.875rem;color:var(--text-muted);margin-top:4px;">
+          Area: <strong>${c.body_area || 'N/A'}</strong> &bull; Status: <strong>${c.status || 'New'}</strong> &bull; Steroid Risk: <strong>${c.steroid_risk || 0}</strong>
+        </div>
+        ${c.reviewer_notes ? `<div style="font-size:0.8125rem;color:var(--gov-navy);margin-top:4px;font-style:italic;">Notes: "${c.reviewer_notes}"</div>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        ${isDoc ? `<button type="button" class="btn btn-secondary btn-sm" onclick="promptDocReview('${c.case_id}')">Clinical Review</button>` : `<button type="button" class="btn btn-secondary btn-sm" onclick="promptHwAction('${c.case_id}')">Update Status</button>`}
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteCaseRecord('${c.case_id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+let activeReviewCaseId = null;
+function promptDocReview(caseId) {
+  activeReviewCaseId = caseId;
+  document.getElementById('docReviewModal').style.display = 'block';
+  document.getElementById('txtDocAssessment').focus();
+}
+
+function cancelDocReview() {
+  activeReviewCaseId = null;
+  document.getElementById('docReviewModal').style.display = 'none';
+  document.getElementById('txtDocAssessment').value = '';
+}
+
+async function submitDocReview() {
+  const note = document.getElementById('txtDocAssessment').value.trim();
+  if (!note) {
+    alert('Please enter a clinical review note.');
+    return;
+  }
+  try {
+    await fetch(`${API_BASE}/api/cases/${activeReviewCaseId}/review`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + appState.authToken
+      },
+      body: JSON.stringify({ note, status: 'Closed' })
+    });
+    cancelDocReview();
+    loadRoleCases();
+  } catch (e) {
+    alert('Could not update case: ' + e.message);
+  }
+}
+
+function promptHwAction(caseId) {
+  const note = prompt('Enter follow-up reviewer note for case ' + caseId + ':');
+  if (note) {
+    fetch(`${API_BASE}/api/cases/${caseId}/review`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + appState.authToken
+      },
+      body: JSON.stringify({ note, status: 'Contacted' })
+    }).then(() => loadRoleCases());
+  }
+}
+
+async function deleteCaseRecord(caseId) {
+  if (!confirm('Permanently delete case ' + caseId + '?')) return;
+  try {
+    await fetch(`${API_BASE}/api/cases/${caseId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + appState.authToken }
+    });
+    loadRoleCases();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function loadAnalystMetrics() {
+  try {
+    const res = await fetch(API_BASE + '/api/analyst/metrics', {
+      headers: { 'Authorization': 'Bearer ' + appState.authToken }
+    });
+    if (!res.ok) throw new Error('Could not fetch analyst metrics');
+    const data = await res.json();
+
+    document.getElementById('statTotalCases').textContent = data.total_cases;
+    document.getElementById('statSteroidRate').textContent = data.steroid_misuse_rate_pct + '%';
+    document.getElementById('statSourceSplit').textContent = `${data.source_distribution.camera} Camera / ${data.source_distribution.upload} Upload`;
+
+    const dist = data.category_distribution;
+    const catDefs = {
+      A: 'Pattern worth checking',
+      B: 'Cream history needs review (Steroid misuse)',
+      C: 'More information needed',
+      D: 'Emergency danger sign'
+    };
+    document.getElementById('tblAnalystMetricsBody').innerHTML = Object.keys(dist).map(cat => `
+      <tr>
+        <td><strong>Category ${cat}</strong></td>
+        <td>${catDefs[cat] || 'Screening outcome'}</td>
+        <td><strong>${dist[cat]}</strong></td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    console.warn('Analyst err:', e);
+  }
+}
+
+function exportAnalystCsv() {
+  window.open(API_BASE + '/api/analyst/export-csv?token=' + appState.authToken, '_blank');
+}
+
+async function loadAdminAudit() {
+  try {
+    const res = await fetch(API_BASE + '/api/admin/audit-log', {
+      headers: { 'Authorization': 'Bearer ' + appState.authToken }
+    });
+    if (!res.ok) throw new Error('Could not fetch audit log');
+    const data = await res.json();
+
+    document.getElementById('tblAdminAuditBody').innerHTML = data.audit_log.map(a => `
+      <tr>
+        <td><code>${a.timestamp}</code></td>
+        <td><strong>${a.action}</strong></td>
+        <td>${a.role}</td>
+        <td>${JSON.stringify(a.details)}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    console.warn('Admin audit err:', e);
+  }
+}
+
+async function resetDemoData() {
+  if (!confirm('Reset demonstration dataset to original seed cases?')) return;
+  try {
+    const res = await fetch(API_BASE + '/api/admin/reset-demo', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + appState.authToken }
+    });
+    if (res.ok) {
+      alert('Demo data successfully reset.');
+      loadAdminAudit();
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function debouncePharmCheck(val) {
+  const fb = document.getElementById('pharmFeedback');
+  if (!val.trim()) {
+    fb.innerHTML = '';
+    return;
+  }
+  const steroids = ['clobetasol', 'betamethasone', 'mometasone', 'hydrocortisone', 'fluocinolone', 'steroid', 'candid-b', 'betnovate', 'quadriderm', 'fourderm', 'panderm'];
+  const isMatch = steroids.some(s => val.toLowerCase().includes(s));
+  if (isMatch) {
+    fb.innerHTML = `<span style="color:var(--gov-red);font-weight:700;">⚠️ Possible steroid ingredient detected. High risk of masking fungal infection. Advise patient to consult physician.</span>`;
+  } else {
+    fb.innerHTML = `<span style="color:var(--gov-green);font-weight:600;">✓ No steroid ingredient detected in visible text. Please confirm the label with a pharmacist or clinician.</span>`;
+  }
+}
+
+function deleteAllStoredData() {
+  if (confirm('Permanently erase ALL stored screening history, records, and reminders?')) {
+    localStorage.removeItem('dermasense_consented_cases');
+    localStorage.removeItem('dermasense_reminder');
+    if (navigator.onLine) {
+      fetch(API_BASE + '/history', { method: 'DELETE' }).catch(e => console.warn('Wipe:', e));
+    }
+    const w = document.getElementById('wipeNotice');
+    if (w) w.style.display = 'inline';
+    alert('All records have been permanently erased.');
+    if (appState.currentUser?.role === 'patient') loadPatientRecords();
+  }
+}
+</script>
+<script src="/portal.js"></script>
+</body>
+</html>

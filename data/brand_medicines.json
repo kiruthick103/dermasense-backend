@@ -1,0 +1,170 @@
+[
+  {
+    "brand_name": "Candid-B",
+    "transliterations": {
+      "hi": "कैंडिड-बी",
+      "kn": "ಕ್ಯಾಂಡಿಡ್-ಬಿ"
+    },
+    "active_ingredients": ["Clotrimazole", "Beclometasone Dipropionate"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Beclometasone",
+    "source": "Central Drugs Standard Control Organisation (CDSCO) / CIMS India",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Antifungal combined with potent topical corticosteroid. High risk of steroid-modified tinea incognito if misused."
+  },
+  {
+    "brand_name": "Betnovate-C",
+    "transliterations": {
+      "hi": "बेटनोवेट-सी",
+      "kn": "ಬೆಟ್ನೋವೇಟ್-ಸಿ"
+    },
+    "active_ingredients": ["Betamethasone Valerate", "Clioquinol"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Betamethasone",
+    "source": "National Formulary of India (NFI)",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Potent corticosteroid with antimicrobial. Frequently misused for fungal rashes leading to skin atrophy."
+  },
+  {
+    "brand_name": "Betnovate-N",
+    "transliterations": {
+      "hi": "बेटनोवेट-एन",
+      "kn": "ಬೆಟ್ನೋವೇಟ್-ಎನ್"
+    },
+    "active_ingredients": ["Betamethasone Valerate", "Neomycin Sulphate"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Betamethasone",
+    "source": "National Formulary of India (NFI)",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Potent corticosteroid with aminoglycoside antibiotic."
+  },
+  {
+    "brand_name": "Quadriderm",
+    "transliterations": {
+      "hi": "क्वाड्रिडर्म",
+      "kn": "ಕ್ವಾಡ್ರಿಡರ್ಮ್"
+    },
+    "active_ingredients": ["Betamethasone", "Gentamicin", "Tolnaftate", "Clioquinol"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Betamethasone",
+    "source": "CIMS India / Indian Pharmacopoeia",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Fixed-dose quadruple combination with potent steroid."
+  },
+  {
+    "brand_name": "Fourderm",
+    "transliterations": {
+      "hi": "फोरडर्म",
+      "kn": "ಫೋರ್ಡರ್ಮ್"
+    },
+    "active_ingredients": ["Clobetasol Propionate", "Gentamicin", "Miconazole", "Chlorocresol"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Clobetasol",
+    "source": "CDSCO Fixed Dose Combination Review",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Super-potent corticosteroid (Clobetasol) combination."
+  },
+  {
+    "brand_name": "Panderm++",
+    "transliterations": {
+      "hi": "पैंडर्म प्लस प्लस",
+      "kn": "ಪ್ಯಾಂಡರ್ಮ್ ಪ್ಲಸ್"
+    },
+    "active_ingredients": ["Clobetasol Propionate", "Ofloxacin", "Ornidazole", "Terbinafine Hydrochloride"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Clobetasol",
+    "source": "CDSCO Indian Drug Safety Alerts",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Super-potent topical corticosteroid combination frequently linked with severe steroid addiction and rebound erythema."
+  },
+  {
+    "brand_name": "Dermichem",
+    "transliterations": {
+      "hi": "डर्मीकेम",
+      "kn": "ಡರ್ಮಿಖೆಮ್"
+    },
+    "active_ingredients": ["Clobetasol", "Clotrimazole", "Neomycin"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Clobetasol",
+    "source": "CIMS India",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Triple action steroid-antifungal-antibiotic combination."
+  },
+  {
+    "brand_name": "Triben",
+    "transliterations": {
+      "hi": "ट्रिबेन",
+      "kn": "ಟ್ರೈಬೆನ್"
+    },
+    "active_ingredients": ["Clobetasol", "Clotrimazole", "Neomycin"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Clobetasol",
+    "source": "CIMS India",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Super-potent steroid combination."
+  },
+  {
+    "brand_name": "Surfaz-B",
+    "transliterations": {
+      "hi": "सरफाज-बी",
+      "kn": "ಸರ್ಫಾಜ್-ಬಿ"
+    },
+    "active_ingredients": ["Clotrimazole", "Beclometasone"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Beclometasone",
+    "source": "National Formulary of India",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Corticosteroid plus imidazole combination."
+  },
+  {
+    "brand_name": "Clocip-B",
+    "transliterations": {
+      "hi": "क्लोसिप-बी",
+      "kn": "ಕ್ಲೋಸಿಪ್-ಬಿ"
+    },
+    "active_ingredients": ["Clotrimazole", "Beclometasone"],
+    "contains_steroid": true,
+    "is_combination": true,
+    "steroid_name": "Beclometasone",
+    "source": "CIMS India",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Combination containing topical corticosteroid."
+  },
+  {
+    "brand_name": "Clotrimazole 1% Cream (Plain)",
+    "transliterations": {
+      "hi": "क्लोट्रिमाजोल क्रीम",
+      "kn": "ಕ್ಲೋಟ್ರಿಮಜೋಲ್ ಕ್ರೀಮ್"
+    },
+    "active_ingredients": ["Clotrimazole 1% w/w"],
+    "contains_steroid": false,
+    "is_combination": false,
+    "steroid_name": null,
+    "source": "Indian Pharmacopoeia (IP)",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Single-agent topical imidazole antifungal without steroid."
+  },
+  {
+    "brand_name": "Terbinafine 1% Cream (Plain)",
+    "transliterations": {
+      "hi": "टर्बिनाफाइन क्रीम",
+      "kn": "ಟರ್ಬಿನಾಫೈನ್ ಕ್ರೀಮ್"
+    },
+    "active_ingredients": ["Terbinafine Hydrochloride 1% w/w"],
+    "contains_steroid": false,
+    "is_combination": false,
+    "steroid_name": null,
+    "source": "Indian Pharmacopoeia (IP)",
+    "reviewed_date": "2026-01-15",
+    "clinical_note": "Single-agent allylamine topical antifungal without steroid."
+  }
+]

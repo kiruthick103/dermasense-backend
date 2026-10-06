@@ -1,0 +1,23 @@
+{
+  "name": "dermasense-platform",
+  "version": "2.2.0",
+  "description": "DermaSense: Official-style Public Health Skin Rash Screening and Multi-Portal Healthcare Platform",
+  "main": "public/portal.js",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "node scripts/test-frontend.js",
+    "lint": "node --check web/portal.js && node --check web/camera.js",
+    "start": "python main.py"
+  },
+  "keywords": [
+    "healthcare",
+    "triage",
+    "dermatology",
+    "screening",
+    "supabase",
+    "fastapi"
+  ],
+  "author": "DermaSense Clinical & AI Team",
+  "license": "Apache-2.0",
+  "devDependencies": {}
+}
