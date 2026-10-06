@@ -1742,21 +1742,19 @@ async function renderAdminPortalTab(tab, box) {
   } else if (tab === 'models') {
     box.innerHTML = `
       <div class="gov-card">
-        <h2 style="font-size:1.125rem;color:var(--gov-navy);margin-bottom:8px;">Model Version Governance</h2>
-        <div style="background:#fff;border:1px solid var(--border-color);padding:14px;border-radius:var(--radius);margin-top:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <strong style="color:var(--gov-navy);font-size:0.9375rem;">dermasense-v2.1-hybrid</strong>
-              <div style="font-size:0.75rem;color:var(--text-muted);">Active in production since October 2026</div>
-            </div>
-            <span style="background:var(--gov-green-light);color:var(--gov-green);font-weight:700;font-size:0.75rem;padding:3px 8px;border-radius:10px;">ACTIVE</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div>
+            <h2 style="font-size:1.125rem;color:var(--gov-navy);margin:0 0 4px 0;">Multi-Model AI Architecture Registry</h2>
+            <p style="color:var(--text-muted);font-size:0.8125rem;margin:0;">
+              Active models synchronized from <code>syncmodels/</code> and model registry with weighted ensemble consensus.
+            </p>
           </div>
-          <p style="font-size:0.8125rem;color:var(--text-main);margin:8px 0 0 0;">
-            Conformal prediction set pattern similarity + deterministic 5-stage clinical safety ladder. Zero raw decimals exposed.
-          </p>
+          <button type="button" class="btn btn-secondary btn-xs" onclick="loadAdminModelsRegistry()">Refresh Models</button>
         </div>
+        <div id="adminModelsRegistryBox"><div class="gov-spinner"></div> Loading models...</div>
       </div>
     `;
+    loadAdminModelsRegistry();
   } else if (tab === 'security') {
     box.innerHTML = `
       <div class="gov-card" style="max-width:650px;">
@@ -1927,6 +1925,39 @@ async function loadAdminAuditLogs() {
     box.innerHTML = `<p style="color:var(--gov-red);">Error loading audit logs.</p>`;
   }
 }
+
+async function loadAdminModelsRegistry() {
+  const box = document.getElementById('adminModelsRegistryBox');
+  if (!box) return;
+  try {
+    const res = await fetch('/api/models');
+    const data = await res.json();
+    const models = data.models || [];
+    box.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+        ${models.map(m => `
+          <div style="background:#fff;border:1px solid var(--border-color);padding:14px;border-radius:var(--radius);">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong style="color:var(--gov-navy);font-size:0.9375rem;">${escapeHtml(m.name)}</strong>
+                <span style="font-size:0.75rem;color:var(--text-muted);margin-left:8px;">(${escapeHtml(m.framework)})</span>
+              </div>
+              <span style="background:${m.status === 'Ready' ? 'var(--gov-green-light)' : 'var(--gov-navy-light)'};color:${m.status === 'Ready' ? 'var(--gov-green)' : 'var(--gov-navy)'};font-weight:700;font-size:0.75rem;padding:3px 8px;border-radius:10px;">
+                ${escapeHtml(m.status)}
+              </span>
+            </div>
+            <p style="font-size:0.8125rem;color:var(--text-main);margin:6px 0 0 0;">
+              ${escapeHtml(m.architecture)} &bull; ${m.classes} Disease Classes
+            </p>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } catch (e) {
+    box.innerHTML = `<p style="color:var(--gov-red);">Error loading models: ${e.message}</p>`;
+  }
+}
+window.loadAdminModelsRegistry = loadAdminModelsRegistry;
 
 function saveAdminSupabaseConfig() {
   const url = document.getElementById('adminSbUrl').value.trim();

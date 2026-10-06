@@ -9,6 +9,10 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 import httpx
+from dotenv import load_dotenv
+
+# Load local .env file if present
+load_dotenv()
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")

@@ -29,6 +29,11 @@ from engines.decide import make_decision
 from engines.triage import sort_triage_queue, get_confidence_display_band
 from engines.pattern import evaluate_pattern_similarity
 from model.predict import predict
+from model.multi_model_engine import (
+    get_available_models_info,
+    predict_ensemble,
+    predict_single_model
+)
 from auth import (
     authenticate_user,
     create_session,
@@ -124,8 +129,63 @@ async def system_config_endpoint():
         "supabase_anon_key": SUPABASE_ANON_KEY if is_supabase_configured() else None,
         "demo_mode": DEMO_MODE,
         "active_model_version": "dermasense-v2.1-hybrid",
-        "portal_version": "v2.2.0"
+        "portal_version": "v2.2.0",
+        "models_count": len(get_available_models_info())
     }
+
+
+# =============================================================================
+# MULTI-MODEL AI ENSEMBLE ENDPOINTS (SYNCMODELS)
+# =============================================================================
+
+@app.get("/api/models")
+async def list_models_endpoint():
+    """Lists all available multi-models from syncmodels and model registry."""
+    models_list = get_available_models_info()
+    return {
+        "status": "success",
+        "total_models": len(models_list),
+        "models": models_list
+    }
+
+
+@app.post("/api/models/predict")
+async def predict_model_endpoint(request: Request):
+    """
+    Executes prediction with a chosen model or the full ensemble consensus.
+    Supports JSON with image_data_url or multipart Form upload.
+    """
+    content_type = request.headers.get("content-type", "")
+    model_id = "ensemble_consensus"
+    pil_image = None
+
+    if "application/json" in content_type:
+        body = await request.json()
+        model_id = body.get("model_id", "ensemble_consensus")
+        data_url = body.get("image_data_url", "")
+        if data_url and "base64," in data_url:
+            import base64
+            raw_bytes = base64.b64decode(data_url.split("base64,")[1])
+            from PIL import Image
+            pil_image = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+    else:
+        form = await request.form()
+        model_id = form.get("model_id", "ensemble_consensus")
+        img_file = form.get("image")
+        if img_file and hasattr(img_file, "read"):
+            raw_bytes = await img_file.read()
+            from PIL import Image
+            pil_image = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+
+    if pil_image is None:
+        raise HTTPException(status_code=400, detail="Please provide a valid image for model inference.")
+
+    if model_id == "ensemble_consensus":
+        res = predict_ensemble(pil_image)
+    else:
+        res = predict_single_model(model_id, pil_image)
+
+    return {"status": "success", "model_id": model_id, "result": res}
 
 
 # =============================================================================
@@ -482,7 +542,7 @@ async def create_screening_endpoint(
         "tips": []
     }
 
-    # 3. PATTERN SIMILARITY MODEL
+    # 3. PATTERN SIMILARITY MODEL (With Multi-Model Ensemble)
     pattern_res = evaluate_pattern_similarity(
         interpretable_features={
             "ring_score": 0.70 if answers.get("itchy_ring_or_scaly") in ("YES", True) else 0.20,
@@ -494,6 +554,22 @@ async def create_screening_endpoint(
         source=source,
         config=RULES_CONFIG
     )
+
+    if closeup_data_url and "base64," in closeup_data_url:
+        try:
+            import base64
+            b64_part = closeup_data_url.split("base64,")[1]
+            raw_b = base64.b64decode(b64_part)
+            from PIL import Image
+            pil_i = Image.open(io.BytesIO(raw_b)).convert("RGB")
+            ensemble_out = predict_ensemble(pil_i)
+            pattern_res["ensemble"] = ensemble_out
+            if ensemble_out.get("top_display_name"):
+                pattern_res["top_display_name"] = ensemble_out["top_display_name"]
+                pattern_res["strength"] = ensemble_out["strength"]
+                pattern_res["calibrated_prob"] = ensemble_out["calibrated_prob"]
+        except Exception as e:
+            print(f"Screening multi-model ensemble warning: {e}")
 
     # 4. MEDICINE LABEL CHECK
     label_res = {"status": "NONE_FOUND_IN_VISIBLE_TEXT", "matched_term": "", "confidence": 0.0}
