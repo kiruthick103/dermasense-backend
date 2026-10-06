@@ -802,12 +802,20 @@
       };
     }
 
+    // Balanced visual feature discrimination across pattern categories
+    const borderSharpness = (metrics.metrics && metrics.metrics.borderSharpness) || 10.0;
+    const fungalScore = ringScore >= 0.25 ? (1.5 + ringScore * 2.5) : (0.3 + ringScore * 1.2);
+    const eczemaScore = (rednessContrast > 8.0 && affectedArea > 15.0 && ringScore < 0.25) ? (1.2 + (rednessContrast / 25.0)) : 0.6;
+    const psoriasisScore = (borderSharpness > 12.0 && rednessContrast > 10.0 && ringScore < 0.35) ? (1.3 + (borderSharpness / 20.0)) : 0.5;
+    const keratosisScore = (borderSharpness > 14.0 && affectedArea < 10.0) ? 1.0 : 0.4;
+    const viralScore = (affectedArea < 8.0 && borderSharpness > 10.0) ? 0.9 : 0.45;
+
     const rawScores = [
-      2.5 * ringScore + 0.1 * Math.min(rednessContrast, 20.0),
-      1.2 * Math.max(0, 1.0 - ringScore) + 0.08 * affectedArea,
-      0.8 * (((metrics.metrics && metrics.metrics.borderSharpness) || 10) / 20.0) + 0.4,
-      0.6 * (rednessContrast / 15.0),
-      0.5
+      fungalScore,      // fungal_ring_pattern
+      eczemaScore,      // eczema_dermatitis_pattern
+      psoriasisScore,   // psoriasis_pattern
+      keratosisScore,   // benign_keratosis_pattern
+      viralScore        // viral_other_pattern
     ];
 
     const maxScore = Math.max(...rawScores);

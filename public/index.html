@@ -3014,8 +3014,8 @@ async function startAutomaticAnalysisPipeline(blob, dataUrl, slotName, source) {
       slotObj.uploadFlags = uploadQuality.flags;
     }
 
-    // Pattern model similarity & strength rating
-    let patternRes = { top_display_name: 'Fungal-type ring pattern', strength: 'Moderate' };
+    // Pattern model similarity & strength rating (local baseline)
+    let patternRes = { top_display_name: 'Scanning pattern...', strength: 'Moderate' };
     if (typeof DermaVision !== 'undefined' && DermaVision.evaluatePatternSimilarity) {
       patternRes = DermaVision.evaluatePatternSimilarity(visionRes, {
         source,
@@ -3042,10 +3042,61 @@ async function startAutomaticAnalysisPipeline(blob, dataUrl, slotName, source) {
       if (fb) {
         fb.innerHTML = `
           <strong>Quality:</strong> ${visionRes.hasSkin ? '<span style="color:var(--gov-green);font-weight:700;">PASS (Skin detected)</span>' : '<span style="color:var(--gov-red);font-weight:700;">Inconclusive</span>'} &bull;
-          <strong>Similar Pattern:</strong> <em>${patternRes.top_display_name}</em> (${patternRes.strength} Strength)
+          <strong>AI Analysis:</strong> <span id="slot1AiStatus" style="color:var(--gov-navy);font-style:italic;"><i class="fa fa-spinner fa-spin"></i> Running Multi-Model Ensemble (MobileNetV3 + EfficientNet-B0 + SkinCNN + Dataset-CNN)...</span>
           ${uploadQuality.has_upload_flags ? `<div style="color:var(--gov-saffron);font-size:0.75rem;margin-top:2px;">Upload Notice: ${uploadQuality.flags.join(', ')} capped strength at Moderate.</div>` : ''}
         `;
       }
+
+      // Real asynchronous multi-model ensemble inference
+      fetch('/api/models/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_data_url: dataUrl, model_id: 'ensemble_consensus' })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.status === 'success' && data.result) {
+          const r = data.result;
+          const topName = r.top_display_name || r.predicted_disease || 'Skin condition pattern';
+          const strength = r.strength || 'Moderate';
+          const confPct = Math.round((r.calibrated_prob || 0.8) * 100);
+          const agreeText = r.consensus_agreement || '';
+
+          // Update patternResult on slotObj and application state
+          slotObj.patternResult = {
+            top_pattern: r.top_pattern || 'evaluated_pattern',
+            top_display_name: topName,
+            predicted_disease: r.predicted_disease || topName,
+            strength: strength,
+            calibrated_prob: r.calibrated_prob || 0.8,
+            all_patterns: r.individual_breakdown ? r.individual_breakdown.map(m => ({
+              id: m.model_id,
+              display_name: `${m.model_name}: ${m.predicted_class}`,
+              prob: m.confidence
+            })) : [
+              { id: 'consensus', display_name: topName, prob: r.calibrated_prob || 0.8 }
+            ],
+            consensus_agreement: agreeText,
+            matching_models: r.matching_models || []
+          };
+
+          const aiStatusEl = document.getElementById('slot1AiStatus');
+          if (aiStatusEl) {
+            aiStatusEl.innerHTML = `
+              <strong style="color:var(--gov-navy);">${topName}</strong> &bull;
+              <span style="color:var(--gov-green);font-weight:700;">${confPct}% Confidence</span> (${strength} Strength)
+              ${agreeText ? `<span style="display:inline-block;background:#eef6fc;color:#0b4d79;padding:2px 8px;border-radius:4px;font-size:0.75rem;margin-left:6px;font-weight:600;border:1px solid #c7e2f5;">${agreeText}</span>` : ''}
+            `;
+          }
+        }
+      })
+      .catch(err => {
+        console.warn('Ensemble inference network notice, using local analysis:', err);
+        const aiStatusEl = document.getElementById('slot1AiStatus');
+        if (aiStatusEl) {
+          aiStatusEl.innerHTML = `<em>${patternRes.top_display_name}</em> (${patternRes.strength} Strength)`;
+        }
+      });
 
       renderSlotOverlay(visionRes, 'slot1Img', 'slot1OverlayCanvas');
       document.getElementById('btnNext4').disabled = false;

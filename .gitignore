@@ -6,8 +6,9 @@
 # Vercel & deployment artifacts
 .vercel
 
-# Cloned reference projects
+# Cloned reference projects & datasets
 syncmodels/
+dataset/
 
 # Python cache & virtual environments
 __pycache__/
