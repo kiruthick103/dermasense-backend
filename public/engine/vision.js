@@ -534,8 +534,11 @@
     }
 
     // 4. Adaptive Thresholding on Redness Map
-    // Normalize positive diffs to 0-255 for Otsu
-    const maxDiff = Math.max(...positiveDiffs, 1.0);
+    // Normalize positive diffs to 0-255 for Otsu (use loop to avoid call stack overflow on large images)
+    let maxDiff = 1.0;
+    for (let pIdx = 0; pIdx < positiveDiffs.length; pIdx++) {
+      if (positiveDiffs[pIdx] > maxDiff) maxDiff = positiveDiffs[pIdx];
+    }
     const scaledDiffs = positiveDiffs.map(d => (d / maxDiff) * 255.0);
     const otsuVal = otsuThreshold(scaledDiffs);
     const diffThreshold = Math.max(1.8, (otsuVal / 255.0) * maxDiff * 0.85);
