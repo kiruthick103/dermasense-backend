@@ -405,10 +405,10 @@ function renderPortalShell(portalName, activeTab) {
   if (!shell) return;
 
   const roleColors = {
-    'patient': 'var(--gov-green)',
-    'asha': 'var(--gov-saffron)',
+    'patient': '#10b981',
+    'asha': '#f59e0b',
     'pharmacist': '#6366f1',
-    'doctor': 'var(--gov-navy)',
+    'doctor': '#3b82f6',
     'analyst': '#0d9488',
     'admin': '#e11d48'
   };
@@ -465,12 +465,12 @@ function renderPortalShell(portalName, activeTab) {
 
   const navList = navItemsByPortal[portalName] || navItemsByPortal['patient'];
   const portalTitles = {
-    'patient': 'Patient Health Portal',
-    'asha': 'ASHA Worker Community Triage Portal',
-    'pharmacist': 'Pharmacist Medicine Safety Portal',
-    'doctor': 'Clinical Doctor Referral & Review Portal',
-    'analyst': 'Public Health & Epidemiological Analytics Portal',
-    'admin': 'Health System Administration Portal'
+    'patient': 'Private Patient Health Suite',
+    'asha': 'Clinical Field Triage & Referral Console',
+    'pharmacist': 'Pharmacy Safety & OCR Intelligence Console',
+    'doctor': 'Physician Clinical Review & EHR Workspace',
+    'analyst': 'Epidemiological Intelligence & Model Diagnostics',
+    'admin': 'Clinical Governance & Security Console'
   };
 
   shell.innerHTML = `
